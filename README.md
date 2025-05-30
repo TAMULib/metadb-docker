@@ -3,6 +3,8 @@ THIS PROJECT IS CURRENTLY IN DEVELOPMENT WITH NO STABLE RELEASES.
 
 Contains the build files for https://hub.docker.com/repository/docker/tamulibraries/metadb/
 
+The "master" branch of this repo will always contain the build files for the latest image, which is the latest *stable release* from MetaDB. There are currently no plans to support non-stable-release builds of MetaDB.
+
 For feedback/reporting issues on the Dockerfile or the associated Run Script, please use our Github repo (https://github.com/TAMULib/metadb-docker/issues). Please note that we are not the developers of MetaDB, so any issues for the underlying software should be submitted to the developer's github repo (https://github.com/metadb-project/metadb/issues).
 
 # ENVIRONMENT VARIABLES

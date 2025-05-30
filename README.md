@@ -30,5 +30,7 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 |KAFKA_SECURITY               |       plaintext         |                    plaintext, ssl                     |Haven't tested with SSL yet.                   |
 
 DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb
+
 MetaDB Github: https://github.com/metadb-project/metadb
+
 MetaDB Documentation: https://metadb.dev/doc/1.3/

@@ -1,2 +1,34 @@
 # metadb-docker
+THIS PROJECT IS CURRENTLY IN DEVELOPMENT WITH NO STABLE RELEASES.
+
 Contains the build files for https://hub.docker.com/repository/docker/tamulibraries/metadb/
+
+For feedback/reporting issues on the Dockerfile or the associated Run Script, please use our Github repo (https://github.com/TAMULib/metadb-docker/issues). Please note that we are not the developers of MetaDB, so any issues for the underlying software should be submitted to the developer's github repo (https://github.com/metadb-project/metadb/issues).
+
+# ENVIRONMENT VARIABLES
+|        Variable Name        |      DEFAULT VALUE      |                     VALID OPTIONS                     |                    COMMENTS                   |
+|-----------------------------|-------------------------|-------------------------------------------------------|-----------------------------------------------|
+|DATA_PATH                    |      /data/metadb       |                                                       |Point to where persistent storage is mounted.  |
+|LOG_FILE_PATH                | /data/metadb/metadb.log |                                                       |Recommended to keep in persistent storage.     |
+|VERBOSE_LOGGING              |         false           |                     true, false                       |                                               |
+|MEM_LIMIT_GB                 |           2             |                                                       |Must be set.                                   |
+|METADB_PORT                  |         8550            |                    1024 to 65535                      |Port this container will listen on.            |
+|BACKEND_DB_HOST              |       pg-metadb         |                                                       |FQDN or k8s Service Name for Postgres backend. |
+|BACKEND_DB_PORT              |         5432            |                    1024 to 65535                      |                                               |
+|BACKEND_PG_DATABASE          |        metadb           |                                                       |Must exist ahead of time.                      |
+|BACKEND_PG_SUPERUSER         |       postgres          |                                                       |Not sure if this is needed or not...           |
+|BACKEND_PG_SUPERUSER_PASSWORD|        <null>           |                                                       |Not sure if this is needed or not...           |
+|BACKEND_PG_USER              |        metadb           |                                                       |Postgres User who must own BACKEND_PG_DATABASE.|
+|BACKEND_PG_USER_PASSWORD     |        <null>           |                                                       |                                               |
+|BACKEND_PG_SSLMODE           |        prefer           |disable, allow, prefer, require, verify-ca, verify-full|Haven't tested with SSL yet.                   |
+|METADB_RUN_MODE              |        start            |             start, upgrade, sync, endsync             |Read MetaDB docs linked below.                 |
+|KAFKA_BROKERS                |      kafka:9092         |                                                       |Use comma-separated list for multiple brokers. |
+|KAFKA_TOPICS                 |   ^metadb_sensor_1\.    |                                                       |Kafka topics that MetaDB will watch.           |
+|KAFKA_CONSUMER_GROUP         |   metadb_sensor_1_1     |                                                       |Kafka Consumer Group that MetaDB creates/joins.|
+|KAFKA_ADD_SCHEMA_PREFIX      |        sensor_          |                                                       |Honestly not 100% sure. Likely realted to PG.  |
+|KAFKA_SCHEMA_STOP_FILTER     |         admin           |                                                       |Schemas that MetaDB explicitly won't ingest.   |
+|KAFKA_SECURITY               |       plaintext         |                    plaintext, ssl                     |Haven't tested with SSL yet.                   |
+
+DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb
+MetaDB Github: https://github.com/metadb-project/metadb
+MetaDB Documentation: https://metadb.dev/doc/1.3/

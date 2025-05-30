@@ -1,0 +1,62 @@
+# Build Image Layer
+FROM debian:trixie-slim AS build
+
+# Install Dependencies
+WORKDIR /root
+RUN apt update -y
+RUN apt install gcc golang ragel ca-certificates git -y
+RUN update-ca-certificates
+RUN go install golang.org/x/tools/cmd/goyacc@master
+RUN cp /root/go/bin/goyacc /usr/bin
+
+# Start Build
+RUN git clone https://github.com/metadb-project/metadb.git -b release-1.3
+WORKDIR /root/metadb
+RUN ./build.sh
+
+# Host Image Layer
+FROM debian:trixie-slim AS host
+
+RUN apt update -y
+RUN apt upgrade -y
+RUN apt install sudo postgresql-client ca-certificates -y
+RUN update-ca-certificates
+
+# Copy Scripts and Binaries
+COPY --from=build /root/metadb/bin/metadb /usr/bin/metadb
+COPY --from=build /root/go/bin/goyacc /usr/bin/goyacc
+COPY ./run-metadb.sh /opt/run-metadb.sh
+RUN chmod ugo+rx /opt/run-metadb.sh
+RUN chmod ugo+rx /usr/bin/metadb
+RUN chmod ugo+rx /usr/bin/goyacc
+
+# Default Port
+EXPOSE 8550
+
+# Environment Variables
+ENV DATA_PATH="/data/metadb"
+ENV LOG_FILE_PATH="/data/metadb/metadb.log"
+ENV VERBOSE_LOGGING="false"
+ENV MEM_LIMIT_GB="2"
+ENV METADB_PORT="8550"
+ENV BACKEND_DB_HOST="pg-metadb"
+ENV BACKEND_DB_PORT="5432"
+ENV BACKEND_PG_DATABASE="metadb"
+ENV BACKEND_PG_SUPERUSER="postgres"
+ENV BACKEND_PG_SUPERUSER_PASSWORD=""
+ENV BACKEND_PG_USER="metadb"
+ENV BACKEND_PG_USER_PASSWORD=""
+ENV BACKEND_PG_SSLMODE="prefer"
+ENV METADB_RUN_MODE="start | upgrade | sync | endsync"
+ENV KAFKA_BROKERS="kafka:9092"
+ENV KAFKA_TOPICS="^metadb_sensor_1\."
+ENV KAFKA_CONSUMER_GROUP="metadb_sensor_1_1"
+ENV KAFKA_ADD_SCHEMA_PREFIX="sensor_"
+ENV KAFKA_SCHEMA_STOP_FILTER="admin"
+ENV KAFKA_SECURITY="plaintext | ssl"
+
+# Specify Non-root User
+RUN useradd metadb
+WORKDIR /opt
+
+CMD ["/opt/run-metadb.sh"]

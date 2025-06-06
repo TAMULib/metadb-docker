@@ -100,3 +100,8 @@ if [ "$METADB_RUN_MODE" = "start" ]; then
     sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB
   fi
 fi
+
+if ! [ "$METADB_RUN_MODE" = "start" ]; then
+  echo 'MetaDB exited unexpectedly with the METADB_RUN_MODE not set to "start". Freezing container to ensure k8s doesn't accidentally re-run completed operations' >> /proc/1/fd/1
+  sleep 999999999
+fi

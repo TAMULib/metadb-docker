@@ -96,6 +96,11 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
 fi
 
 if [ "$METADB_RUN_MODE" = "sync" ]; then
+  if [ "$INIT_FLAG" = "true" ]; then
+    echo 'ERROR: MetaDB is set to run in sync mode, but it is just now initializing? Change METADB_RUN_MODE to "start"' >> /proc/1/fd/1
+    touch "$DATA_DIR/.error-flag"
+    exit 1
+  fi
   echo 'Starting MetaDB Sync Task (source: sensor)' >> /proc/1/fd/1
   sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor -l "$LOG_FILE_PATH"
   echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> /proc/1/fd/1

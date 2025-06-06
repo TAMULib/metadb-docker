@@ -25,6 +25,17 @@ fi
 # Copy all log entries from the log file to the STDOUT of PID 1, so it appears in docker logs
 tail -f "$LOG_FILE_PATH" >> /proc/1/fd/1 &
 
+# Make sure MetaDB doesn't accidentally run a task multiple times due to the container restarting unexpectedly.
+if [ -f "$DATA_DIR/.error-flag" ]; then
+  if [ "$METADB_RUN_MODE" = "start" ]; then
+    rm -f "$DATA_DIR/.error-flag"
+  else
+    echo "MetaDB exited with an error with the METADB_RUN_MODE in a task-state (sync, endsync, upgrade). In order to prevent tasks from unintentionally running multiple times, this script will exit with an error code. To clear this error state, either delete the file at $DATA_DIR/.error-flag or start MetaDB with METADB_RUN_MODE set to 'start'." >> /proc/1/fd/1
+    sleep 5
+    exit 1
+  fi
+fi
+
 # Generate metadb.conf
 if [ -f "$DATA_DIR/metadb.conf" ]; then
   rm -f "$DATA_DIR/metadb.conf"
@@ -104,6 +115,6 @@ if [ "$METADB_RUN_MODE" = "start" ]; then
 fi
 
 if ! [ "$ORIGINAL_METADB_RUN_MODE" = "start" ]; then
-  echo "MetaDB exited unexpectedly with the METADB_RUN_MODE not set to 'start'. Freezing container to ensure k8s doesn't accidentally re-run completed operations" >> /proc/1/fd/1
-  sleep 999999999
+  echo "MetaDB exited unexpectedly with the METADB_RUN_MODE not set to 'start'. Setting error flag at $DATA_DIR/.error-flag" >> /proc/1/fd/1
+  touch "$DATA_DIR/.error-flag"
 fi

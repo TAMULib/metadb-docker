@@ -55,30 +55,40 @@ if [ "$INIT_FLAG" = "true" ]; then
   echo 'Registering Kafka Connector' >> /proc/1/fd/1
   sleep 5
   psql -X -h localhost -d metadb -p $METADB_PORT -c "CREATE DATA SOURCE sensor TYPE kafka OPTIONS (brokers '$KAFKA_BROKERS', topics '$KAFKA_TOPICS', consumergroup '$KAFKA_CONSUMER_GROUP', addschemaprefix '$KAFKA_ADD_SCHEMA_PREFIX', schemastopfilter '$KAFKA_SCHEMA_STOP_FILTER', security '$KAFKA_SECURITY');"
-  echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete ("source snapshot complete (deadline exceeded)" will appear in the log file), run MetaDB with METADB_RUN_MODE set to "endsync".' >> /proc/1/fd/1
-  sleep 9999999999
+  echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete ("source snapshot complete" will appear in the log file), MetaDB will run with METADB_RUN_MODE set to "endsync".' >> /proc/1/fd/1
+  
+  INIT_SYNC_FLAG=0
+  while [ $INIT_SYNC_FLAG -le 0 ]
+  do
+    INIT_SYNC_FLAG=$(cat "$LOG_FILE_PATH" | grep "source snapshot complete" | wc -l)
+  done
+
+  echo 'Initial snapshot completed' >> /proc/1/fd/1
+
+  sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
+  METADB_RUN_MODE="endsync"
 fi
 
 # Run MetaDB
 if [ "$METADB_RUN_MODE" = "upgrade" && "$INIT_FLAG" = "false" ]; then
   echo 'Starting MetaDB Upgrade Task (this may take awhile)' >> /proc/1/fd/1
   sudo -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" -l "$LOG_FILE_PATH"
-  echo 'MetaDB Upgrade Complete! Please Change the METADB_RUN_MODE variable to "start" and restart the container.' >> /proc/1/fd/1
-  sleep 99999999999 # If we just exit on completion, k8s will restart it and run the upgrade again.
+  echo 'MetaDB Upgrade Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> /proc/1/fd/1
+  METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "sync" ]; then
   echo 'Starting MetaDB Sync Task (source: sensor)' >> /proc/1/fd/1
   sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor -l "$LOG_FILE_PATH"
-  echo 'MetaDB Sync Complete! Please Change the METADB_RUN_MODE variable to "start" and restart the container.' >> /proc/1/fd/1
-  sleep 99999999999
+  echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> /proc/1/fd/1
+  METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
   echo 'Starting MetaDB Endsync Task (source: sensor)' >> /proc/1/fd/1
   sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor -l "$LOG_FILE_PATH"
-  echo 'MetaDB Endsync Complete! Please Change the METADB_RUN_MODE variable to "start" and restart the container.' >> /proc/1/fd/1
-  sleep 99999999999
+  echo 'MetaDB Endsync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> /proc/1/fd/1
+  METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "start" ]; then

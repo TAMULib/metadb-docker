@@ -1,5 +1,7 @@
 #!/bin/sh
 
+ORIGINAL_METADB_RUN_MODE=$METADB_RUN_MODE
+
 echo "Testing if $DATA_DIR exists" >> /proc/1/fd/1
 
 # Check if DATA_DIR exists, if not then runs metadb init
@@ -101,7 +103,7 @@ if [ "$METADB_RUN_MODE" = "start" ]; then
   fi
 fi
 
-if ! [ "$METADB_RUN_MODE" = "start" ]; then
-  echo 'MetaDB exited unexpectedly with the METADB_RUN_MODE not set to "start". Freezing container to ensure k8s doesn't accidentally re-run completed operations' >> /proc/1/fd/1
+if ! [ "$ORIGINAL_METADB_RUN_MODE" = "start" ]; then
+  echo "MetaDB exited unexpectedly with the METADB_RUN_MODE not set to 'start'. Freezing container to ensure k8s doesn't accidentally re-run completed operations" >> /proc/1/fd/1
   sleep 999999999
 fi

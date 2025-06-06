@@ -5,7 +5,7 @@ Contains the build files for https://hub.docker.com/repository/docker/tamulibrar
 
 **Current Version:** release-1.3
 
-The "master" branch of this repo will always contain the build files for the latest image, which is the latest **stable release** from MetaDB. There are currently no plans to support non-stable-release builds of MetaDB.
+The "master" branch of this repo will always contain the build files for the latest image, which is the latest **stable release** from MetaDB. There are currently no plans to support non-stable-release builds of MetaDB, or instances of MetaDB that aren't using [FOLIO](https://folio.org/) as the backend
 
 For feedback/reporting issues on the Dockerfile or the associated Run Script, please use our Github repo (https://github.com/TAMULib/metadb-docker/issues). Please note that we are not the developers of MetaDB, so any issues for the underlying software should be submitted to the developer's github repo (https://github.com/metadb-project/metadb/issues).
 
@@ -29,9 +29,10 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 |KAFKA_BROKERS                |      kafka:9092         |                                                       |Use comma-separated list for multiple brokers. |
 |KAFKA_TOPICS                 |   ^metadb_sensor_1\.    |                                                       |Kafka topics that MetaDB will watch.           |
 |KAFKA_CONSUMER_GROUP         |   metadb_sensor_1_1     |                                                       |Kafka Consumer Group that MetaDB creates/joins.|
-|KAFKA_ADD_SCHEMA_PREFIX      |        sensor_          |                                                       |Honestly not 100% sure. Likely realted to PG.  |
 |KAFKA_SCHEMA_STOP_FILTER     |         admin           |                                                       |Schemas that MetaDB explicitly won't ingest.   |
 |KAFKA_SECURITY               |       plaintext         |                    plaintext, ssl                     |Haven't tested with SSL yet.                   |
+|ADD_SCHEMA_PREFIX            |        sensor_          |                                                       |Honestly not 100% sure. Likely realted to PG.  |
+|FOLIO_TENANT_NAME            |          tamu           |                                                       |Name of the tenant in FOLIO this will monitor. |
 
 DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb
 

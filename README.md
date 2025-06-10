@@ -29,9 +29,9 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 |KAFKA_BROKERS                |      kafka:9092         |                                                       |Use comma-separated list for multiple brokers. |
 |KAFKA_TOPICS                 |   ^metadb_sensor_1\.    |                                                       |Kafka topics that MetaDB will watch.           |
 |KAFKA_CONSUMER_GROUP         |   metadb_sensor_1_1     |                                                       |Kafka Consumer Group that MetaDB creates/joins.|
-|KAFKA_SCHEMA_STOP_FILTER     |         admin           |                                                       |Schemas that MetaDB explicitly won't ingest.   |
+|SCHEMA_STOP_FILTER           |         admin           |                                                       |Schemas that MetaDB explicitly won't ingest.   |
 |KAFKA_SECURITY               |       plaintext         |                    plaintext, ssl                     |Haven't tested with SSL yet.                   |
-|ADD_SCHEMA_PREFIX            |        sensor_          |                                                       |Honestly not 100% sure. Likely realted to PG.  |
+|ADD_SCHEMA_PREFIX            |        sensor_          |                                                       |Prepends value to schemas in analytics DB.     |
 |FOLIO_TENANT_NAME            |          tamu           |                                                       |Name of the tenant in FOLIO this will monitor. |
 
 DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb

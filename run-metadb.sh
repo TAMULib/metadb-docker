@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ORIGINAL_METADB_RUN_MODE=$METADB_RUN_MODE
 

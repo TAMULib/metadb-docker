@@ -55,7 +55,7 @@ ENV SCHEMA_STOP_FILTER="admin"
 ENV KAFKA_SECURITY="plaintext | ssl"
 ENV ADD_SCHEMA_PREFIX="folio_"
 ENV FOLIO_TENANT_NAME="tamu"
-ENV LDP_CONF_FILE_PATH="/data/metadb/ldpconf.json"
+ENV LDP_CONF_FILE_PATH="/ldpconf/ldpconf.json"
 
 # Specify Non-root User
 RUN useradd metadb

@@ -152,6 +152,13 @@ if [ "$METADB_RUN_MODE" = "endsync" ]; then
   METADB_RUN_MODE="start"
 fi
 
+if [ "$METADB_RUN_MODE" = "migrate" ]; then
+  echo "Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}." >> "$LOG_FILE_PATH"
+  exec sudo -u metadb /usr/bin/metadb migrate -D "$DATA_DIR" --ldpconf "$LDP_CONF_FILE_PATH" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  echo 'MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
+  METADB_RUN_MODE="start"
+fi
+
 if [ "$METADB_RUN_MODE" = "start" ]; then
   echo 'Starting MetaDB Instance' >> "$LOG_FILE_PATH"
   if [ "$VERBOSE_LOGGING" = "true" ]; then

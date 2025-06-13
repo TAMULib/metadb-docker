@@ -33,6 +33,7 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 |KAFKA_SECURITY               |       plaintext         |                    plaintext, ssl                     |Haven't tested with SSL yet.                   |
 |ADD_SCHEMA_PREFIX            |        sensor_          |                                                       |Prepends value to schemas in analytics DB.     |
 |FOLIO_TENANT_NAME            |          tamu           |                                                       |Name of the tenant in FOLIO this will monitor. |
+|LDP_CONF_FILE_PATH           |  /ldpconf/ldpconf.json  |                                                       |Suggested to mount a ConfigMap to this path.   |
 
 DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb
 

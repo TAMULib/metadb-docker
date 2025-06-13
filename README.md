@@ -2,7 +2,7 @@
 
 Contains the build files for https://hub.docker.com/repository/docker/tamulibraries/metadb/
 
-**Current Version:** release-1.4
+**Current Version:** v1.4.0-rc1
 
 The "master" branch of this repo will always contain the build files for the latest image, which is the latest **stable release** from MetaDB. There are currently no plans to support non-stable-release builds of MetaDB, or instances of MetaDB that aren't using [FOLIO](https://folio.org/) as the backend
 

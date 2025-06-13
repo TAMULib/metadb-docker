@@ -60,4 +60,4 @@ ENV FOLIO_TENANT_NAME="tamu"
 RUN useradd metadb
 WORKDIR /opt
 
-ENTRYPOINT ["exec /opt/run-metadb.sh"]
+ENTRYPOINT ["/opt/run-metadb.sh"]

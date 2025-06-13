@@ -10,7 +10,7 @@ RUN go install golang.org/x/tools/cmd/goyacc@master
 RUN cp /root/go/bin/goyacc /usr/bin
 
 # Start Build
-RUN git clone https://github.com/metadb-project/metadb.git -b v.1.3.9
+RUN git clone https://github.com/metadb-project/metadb.git -b v1.3.9
 WORKDIR /root/metadb
 RUN ./build.sh
 

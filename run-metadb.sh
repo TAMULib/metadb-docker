@@ -2,20 +2,6 @@
 
 ORIGINAL_METADB_RUN_MODE=$METADB_RUN_MODE
 
-clean_quit()
-{
-  if [ ! -f "$LOG_FILE_PATH" ]; then 
-    touch "$LOG_FILE_PATH" 
-  fi
-  echo "Received exit signal, stopping MetaDB Instance" >> $LOG_FILE_PATH
-  if [ -f "$DATA_DIR/metadb.pid" ]; then
-    sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
-  fi
-  exit
-}
-
-trap clean_quit SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
-
 # Script Start
 echo "Testing if $DATA_DIR exists" >> /proc/1/fd/1
 
@@ -28,6 +14,15 @@ if [ ! -d "$DATA_DIR" ]; then
   /usr/bin/metadb init -D "$DATA_DIR" >> /proc/1/fd/1
   chown -R metadb "$DATA_DIR"
   INIT_FLAG="true"
+fi
+
+if [ -f "$LOG_FILE_PATH" ]; then
+  if [ -f "${LOG_FILE_PATH}.old" ]; then
+    cat "$LOG_FILE_PATH" >> "${LOG_FILE_PATH}.old"
+    rm -f "$LOG_FILE_PATH"
+  else
+    mv "$LOG_FILE_PATH" "${LOG_FILE_PATH}.old"
+  fi
 fi
 
 # Ensures the metadb user has access to write to log
@@ -101,6 +96,7 @@ if [ "$INIT_FLAG" = "true" ]; then
   while [ $INIT_SYNC_FLAG -le 0 ]
   do
     INIT_SYNC_FLAG=$(cat "$LOG_FILE_PATH" | grep "snapshot complete" | wc -l)
+    sleep 1
   done
 
   echo 'Initial snapshot completed' >> "$LOG_FILE_PATH"
@@ -144,10 +140,10 @@ fi
 if [ "$METADB_RUN_MODE" = "start" ]; then
   echo 'Starting MetaDB Instance' >> "$LOG_FILE_PATH"
   if [ "$VERBOSE_LOGGING" = "true" ]; then
-    sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB
+    exec sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB
   fi
   if [ "$VERBOSE_LOGGING" = "false" ]; then
-    sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB
+    exec sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB
   fi
 fi
 

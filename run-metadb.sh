@@ -30,6 +30,15 @@ if [ ! -d "$DATA_DIR" ]; then
   INIT_FLAG="true"
 fi
 
+if [ -f "$LOG_FILE_PATH" ]; then
+  if [ -f "${LOG_FILE_PATH}.old" ]; then
+    cat "$LOG_FILE_PATH" >> "${LOG_FILE_PATH}.old"
+    rm -f "$LOG_FILE_PATH"
+  else
+    mv "$LOG_FILE_PATH" "${LOG_FILE_PATH}.old"
+  fi
+fi
+
 # Ensures the metadb user has access to write to log
 if [ ! -f "$LOG_FILE_PATH" ]; then
   touch "$LOG_FILE_PATH"

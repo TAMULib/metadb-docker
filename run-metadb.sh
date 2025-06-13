@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Trap exit method in case of exit while running initial sync.
+clean_quit()
+{
+  if [ ! -f "$LOG_FILE_PATH" ]; then 
+    touch "$LOG_FILE_PATH" 
+  fi
+  echo "Received exit signal, stopping MetaDB Instance" >> $LOG_FILE_PATH
+  if [ -f "$DATA_DIR/metadb.pid" ]; then
+    sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
+  fi
+  exit
+}
+
+trap clean_quit SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
+
 ORIGINAL_METADB_RUN_MODE=$METADB_RUN_MODE
 
 # Script Start
@@ -113,7 +128,7 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
     exit 1
   fi
   echo 'Starting MetaDB Upgrade Task (this may take awhile)' >> "$LOG_FILE_PATH"
-  sudo -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" 2>&1 | cat >> "$LOG_FILE_PATH"
+  exec sudo -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" 2>&1 | cat >> "$LOG_FILE_PATH"
   echo 'MetaDB Upgrade Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi
@@ -125,14 +140,14 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
     exit 1
   fi
   echo 'Starting MetaDB Sync Task (source: sensor)' >> "$LOG_FILE_PATH"
-  sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  exec sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
   echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "endsync".' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="endsync"
 fi
 
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
   echo 'Starting MetaDB Endsync Task (source: sensor)' >> "$LOG_FILE_PATH"
-  sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  exec sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
   echo 'MetaDB Endsync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi

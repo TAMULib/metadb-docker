@@ -47,7 +47,7 @@ ENV BACKEND_PG_SUPERUSER_PASSWORD=""
 ENV BACKEND_PG_USER="metadb"
 ENV BACKEND_PG_USER_PASSWORD=""
 ENV BACKEND_PG_SSLMODE="prefer"
-ENV METADB_RUN_MODE="start | upgrade | sync | endsync"
+ENV METADB_RUN_MODE="start | upgrade | sync | endsync | migrate"
 ENV KAFKA_BROKERS="kafka:9092"
 ENV KAFKA_TOPICS="^metadb_sensor_1\."
 ENV KAFKA_CONSUMER_GROUP="metadb_sensor_1_1"
@@ -55,6 +55,7 @@ ENV SCHEMA_STOP_FILTER="admin"
 ENV KAFKA_SECURITY="plaintext | ssl"
 ENV ADD_SCHEMA_PREFIX="folio_"
 ENV FOLIO_TENANT_NAME="tamu"
+ENV LDP_CONF_FILE_PATH="/data/metadb/ldpconf.json"
 
 # Specify Non-root User
 RUN useradd metadb

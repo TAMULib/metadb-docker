@@ -24,7 +24,7 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 |BACKEND_PG_USER              |        metadb           |                                                       |Postgres User who must own BACKEND_PG_DATABASE.|
 |BACKEND_PG_USER_PASSWORD     |        <null>           |                                                       |                                               |
 |BACKEND_PG_SSLMODE           |        prefer           |disable, allow, prefer, require, verify-ca, verify-full|Haven't tested with SSL yet.                   |
-|METADB_RUN_MODE              |        start            |             start, upgrade, sync, endsync             |Read MetaDB docs linked below.                 |
+|METADB_RUN_MODE              |        start            |        start, upgrade, sync, endsync, migrate         |Read MetaDB docs linked below.                 |
 |KAFKA_BROKERS                |      kafka:9092         |                                                       |Use comma-separated list for multiple brokers. |
 |KAFKA_TOPICS                 |   ^metadb_sensor_1\.    |                                                       |Kafka topics that MetaDB will watch.           |
 |KAFKA_CONSUMER_GROUP         |   metadb_sensor_1_1     |                                                       |Kafka Consumer Group that MetaDB creates/joins.|

@@ -2,6 +2,19 @@
 
 ORIGINAL_METADB_RUN_MODE=$METADB_RUN_MODE
 
+clean_quit()
+{
+  if [ ! -f "$LOG_FILE_PATH" ]; then 
+    touch "$LOG_FILE_PATH" 
+  fi
+  echo "Received exit signal, stopping MetaDB Instance" >> $LOG_FILE_PATH
+  sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
+  exit
+}
+
+trap clean_quit SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
+
+# Script Start
 echo "Testing if $DATA_DIR exists" >> /proc/1/fd/1
 
 # Check if DATA_DIR exists, if not then runs metadb init
@@ -30,19 +43,23 @@ if [ -f "$DATA_DIR/.error-flag" ]; then
   if [ "$METADB_RUN_MODE" = "start" ]; then
     rm -f "$DATA_DIR/.error-flag"
   else
-    echo "MetaDB exited with an error with the METADB_RUN_MODE in a task-state (sync, endsync, upgrade). In order to prevent tasks from unintentionally running multiple times, this script will exit with an error code. To clear this error state, either delete the file at $DATA_DIR/.error-flag or start MetaDB with METADB_RUN_MODE set to 'start'." >> /proc/1/fd/1
+    echo "MetaDB exited with an error with the METADB_RUN_MODE in a task-state (sync, endsync, upgrade). In order to prevent tasks from unintentionally running multiple times, this script will exit with an error code. To clear this error state, either delete the file at $DATA_DIR/.error-flag or start MetaDB with METADB_RUN_MODE set to 'start'." >> "$LOG_FILE_PATH"
     sleep 5
     exit 1
   fi
 fi
 
+if [ -f "$DATA_DIR/metadb.pid" ]; then
+  rm -f "$DATA_DIR/metadb.pid"
+fi
+
 # Generate metadb.conf
 if [ -f "$DATA_DIR/metadb.conf" ]; then
   rm -f "$DATA_DIR/metadb.conf"
-  echo 'Deleting metadb.conf file' >> /proc/1/fd/1
+  echo 'Deleting metadb.conf file' >> "$LOG_FILE_PATH"
 fi
 
-echo 'Generating new metadb.conf file' >> /proc/1/fd/1
+echo 'Generating new metadb.conf file' >> "$LOG_FILE_PATH"
 touch "$DATA_DIR/metadb.conf"
 chown -R metadb "$DATA_DIR"
 chmod o-rwx "$DATA_DIR/metadb.conf"
@@ -58,14 +75,14 @@ sslmode = $BACKEND_PG_SSLMODE" > "$DATA_DIR/metadb.conf"
 
 # Create Data Source Object if Initializing new MetaDB Instance
 if [ "$INIT_FLAG" = "true" ]; then
-  echo 'Continuing initialization process' >> /proc/1/fd/1
+  echo 'Continuing initialization process' >> "$LOG_FILE_PATH"
   if [ "$VERBOSE_LOGGING" = "true" ]; then
     sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
   fi
   if [ "$VERBOSE_LOGGING" = "false" ]; then
     sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
   fi
-  echo 'Registering Kafka Connector' >> /proc/1/fd/1
+  echo 'Registering Kafka Connector' >> "$LOG_FILE_PATH"
   sleep 5
 
   if [[ "$ADD_SCHEMA_PREFIX" == *"_" ]] && ! [[ "$FOLIO_TENANT_NAME" == *"_" ]]; then
@@ -76,15 +93,15 @@ if [ "$INIT_FLAG" = "true" ]; then
   fi
 
   psql -X -h localhost -d metadb -p $METADB_PORT -c "CREATE DATA SOURCE sensor TYPE kafka OPTIONS (brokers '$KAFKA_BROKERS', module 'folio', trimschemaprefix '$FOLIO_TENANT_NAME', topics '$KAFKA_TOPICS', consumergroup '$KAFKA_CONSUMER_GROUP', addschemaprefix '$ADD_SCHEMA_PREFIX', schemastopfilter '$SCHEMA_STOP_FILTER', security '$KAFKA_SECURITY');"
-  echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete ("source snapshot complete" will appear in the log file), MetaDB will run with METADB_RUN_MODE set to "endsync".' >> /proc/1/fd/1
+  echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete ("source snapshot complete" will appear in the log file), MetaDB will run with METADB_RUN_MODE set to "endsync".' >> "$LOG_FILE_PATH"
   
   INIT_SYNC_FLAG=0
   while [ $INIT_SYNC_FLAG -le 0 ]
   do
-    INIT_SYNC_FLAG=$(cat "$LOG_FILE_PATH" | grep "source snapshot complete" | wc -l)
+    INIT_SYNC_FLAG=$(cat "$LOG_FILE_PATH" | grep "snapshot complete" | wc -l)
   done
 
-  echo 'Initial snapshot completed' >> /proc/1/fd/1
+  echo 'Initial snapshot completed' >> "$LOG_FILE_PATH"
 
   sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
   METADB_RUN_MODE="endsync"
@@ -93,37 +110,37 @@ fi
 # Run MetaDB
 if [ "$METADB_RUN_MODE" = "upgrade" ]; then
   if [ "$INIT_FLAG" = "true" ]; then
-    echo 'ERROR: MetaDB is set to run in upgrade mode, but it is just now initializing? Change METADB_RUN_MODE to "start"' >> /proc/1/fd/1
+    echo 'ERROR: MetaDB is set to run in upgrade mode, but it is just now initializing? Change METADB_RUN_MODE to "start"' >> "$LOG_FILE_PATH"
     touch "$DATA_DIR/.error-flag"
     exit 1
   fi
-  echo 'Starting MetaDB Upgrade Task (this may take awhile)' >> /proc/1/fd/1
-  sudo -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" -l "$LOG_FILE_PATH"
-  echo 'MetaDB Upgrade Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> /proc/1/fd/1
+  echo 'Starting MetaDB Upgrade Task (this may take awhile)' >> "$LOG_FILE_PATH"
+  sudo -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" 2>&1 | cat >> "$LOG_FILE_PATH"
+  echo 'MetaDB Upgrade Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "sync" ]; then
   if [ "$INIT_FLAG" = "true" ]; then
-    echo 'ERROR: MetaDB is set to run in sync mode, but it is just now initializing? Change METADB_RUN_MODE to "start"' >> /proc/1/fd/1
+    echo 'ERROR: MetaDB is set to run in sync mode, but it is just now initializing? Change METADB_RUN_MODE to "start"' >> "$LOG_FILE_PATH"
     touch "$DATA_DIR/.error-flag"
     exit 1
   fi
-  echo 'Starting MetaDB Sync Task (source: sensor)' >> /proc/1/fd/1
-  sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor -l "$LOG_FILE_PATH"
-  echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> /proc/1/fd/1
-  METADB_RUN_MODE="start"
+  echo 'Starting MetaDB Sync Task (source: sensor)' >> "$LOG_FILE_PATH"
+  sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "endsync". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
+  METADB_RUN_MODE="endsync"
 fi
 
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
-  echo 'Starting MetaDB Endsync Task (source: sensor)' >> /proc/1/fd/1
-  sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor -l "$LOG_FILE_PATH"
-  echo 'MetaDB Endsync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> /proc/1/fd/1
+  echo 'Starting MetaDB Endsync Task (source: sensor)' >> "$LOG_FILE_PATH"
+  sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  echo 'MetaDB Endsync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "start" ]; then
-  echo 'Starting MetaDB Instance' >> /proc/1/fd/1
+  echo 'Starting MetaDB Instance' >> "$LOG_FILE_PATH"
   if [ "$VERBOSE_LOGGING" = "true" ]; then
     sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB
   fi
@@ -133,6 +150,6 @@ if [ "$METADB_RUN_MODE" = "start" ]; then
 fi
 
 if ! [ "$ORIGINAL_METADB_RUN_MODE" = "start" ]; then
-  echo "MetaDB exited unexpectedly with the METADB_RUN_MODE not set to 'start'. Setting error flag at $DATA_DIR/.error-flag" >> /proc/1/fd/1
+  echo "MetaDB exited unexpectedly with the METADB_RUN_MODE not set to 'start'. Setting error flag at $DATA_DIR/.error-flag" >> "$LOG_FILE_PATH"
   touch "$DATA_DIR/.error-flag"
 fi

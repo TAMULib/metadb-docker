@@ -12,6 +12,9 @@ RUN cp /root/go/bin/goyacc /usr/bin
 # Start Build
 RUN git clone https://github.com/metadb-project/metadb.git -b v1.4.0-rc1
 WORKDIR /root/metadb
+COPY ./modify-force-lines.sh .
+RUN chmod o+rx ./modify-force-lines.sh
+RUN ./modify-force-lines.sh
 RUN chmod o+rx ./build
 RUN ./build
 
@@ -57,6 +60,7 @@ ENV KAFKA_SECURITY="plaintext | ssl"
 ENV ADD_SCHEMA_PREFIX="folio_"
 ENV FOLIO_TENANT_NAME="tamu"
 ENV LDP_CONF_FILE_PATH="/ldpconf/ldpconf.json"
+ENV FORCE_RUN="false"
 
 # Specify Non-root User
 RUN useradd metadb

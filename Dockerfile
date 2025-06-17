@@ -60,6 +60,7 @@ ENV KAFKA_SECURITY="plaintext | ssl"
 ENV ADD_SCHEMA_PREFIX="folio_"
 ENV FOLIO_TENANT_NAME="tamu"
 ENV LDP_CONF_FILE_PATH="/ldpconf/ldpconf.json"
+ENV EXTERNAL_SQL_FOLIO_TAG="refs/tags/v1.8.0"
 ENV FORCE_RUN="false"
 
 # Specify Non-root User

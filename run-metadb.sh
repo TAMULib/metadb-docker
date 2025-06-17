@@ -140,14 +140,22 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
     exit 1
   fi
   echo 'Starting MetaDB Sync Task (source: sensor)' >> "$LOG_FILE_PATH"
-  exec sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+  if [ "$FORCE_RUN" = "true" ]; then
+    exec sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+  else
+    exec sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  fi
   echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "endsync".' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="endsync"
 fi
 
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
   echo 'Starting MetaDB Endsync Task (source: sensor)' >> "$LOG_FILE_PATH"
-  exec sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+  if [ "$FORCE_RUN" = "true" ]; then
+    exec sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+  else
+    exec sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  fi
   echo 'MetaDB Endsync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi

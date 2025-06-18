@@ -34,7 +34,7 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 |FOLIO_TENANT_NAME            |          tamu                                  |                                                             |Name of the tenant in FOLIO this will monitor.                     |
 |LDP_CONF_FILE_PATH           |  /ldpconf/ldpconf.json                         |                                                             |Only needed for "migrate" task. ConfigMap Recommended.             |
 |DERIVED_TABLES_GIT_REPO      |https://github.com/folio-org/folio-analytics.git|URL pointing to any valid git repo.                          |Must be public, must contain 'sql_metadb/derived_tables' folders.  |
-|DERIVED_TABLES_GIT_TAG       |    /refs/tags/v1.8.0                           |Any exisiting tag in repo (see comment), or blank to disable.|Tag from DERIVED_TABLES_GIT_REPO to clone to run daily.            |
+|DERIVED_TABLES_GIT_TAG       |     refs/tags/v1.8.0                           |Any exisiting tag in repo (see comment), or blank to disable.|Tag from DERIVED_TABLES_GIT_REPO to clone to run daily.            |
 |FORCE_RUN                    |          false                                 |                      true. false                            |Force sync and endsync tasks to ALWAYS proceed.                    |
 
 DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb

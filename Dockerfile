@@ -12,9 +12,9 @@ RUN cp /root/go/bin/goyacc /usr/bin
 # Start Build
 RUN git clone https://github.com/metadb-project/metadb.git -b v1.4.0-rc1
 WORKDIR /root/metadb
-COPY ./modify-force-lines.sh .
-RUN chmod o+rx ./modify-force-lines.sh
-RUN ./modify-force-lines.sh
+COPY ./modify-code.sh .
+RUN chmod o+rx ./modify-code.sh
+RUN ./modify-code.sh
 RUN chmod o+rx ./build
 RUN ./build
 

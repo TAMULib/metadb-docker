@@ -104,8 +104,6 @@ if [ "$INIT_FLAG" = "true" ]; then
     ADD_SCHEMA_PREFIX="${ADD_SCHEMA_PREFIX}_"
   fi
 
-  psql -X -h localhost -d metadb -p $METADB_PORT -c "ALTER SYSTEM SET external_sql_folio = '$EXTERNAL_SQL_FOLIO_TAG';"
-  echo "$EXTERNAL_SQL_FOLIO_TAG" > "$DATA_DIR/folio-sql-tag"
   psql -X -h localhost -d metadb -p $METADB_PORT -c "CREATE DATA SOURCE sensor TYPE kafka OPTIONS (brokers '$KAFKA_BROKERS', module 'folio', trim_schema_prefix '$FOLIO_TENANT_NAME', topics '$KAFKA_TOPICS', consumer_group '$KAFKA_CONSUMER_GROUP', add_schema_prefix '$ADD_SCHEMA_PREFIX', schema_stop_filter '$SCHEMA_STOP_FILTER', security '$KAFKA_SECURITY');"
   echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete ("source snapshot complete" will appear in the log file), MetaDB will run with METADB_RUN_MODE set to "endsync".' >> "$LOG_FILE_PATH"
   
@@ -131,9 +129,6 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
   fi
   echo 'Starting MetaDB Upgrade Task (this may take awhile)' >> "$LOG_FILE_PATH"
   exec sudo -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" --force 2>&1 | cat >> "$LOG_FILE_PATH"
-  if [ -f "$DATA_DIR/folio-sql-tag" ]; then
-    rm -f "$DATA_DIR/folio-sql-tag"
-  fi
   echo 'MetaDB Upgrade Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi
@@ -174,30 +169,6 @@ fi
 
 if [ "$METADB_RUN_MODE" = "start" ]; then
   echo 'Starting MetaDB Instance' >> "$LOG_FILE_PATH"
-
-  if ! [ -f "$DATA_DIR/folio-sql-tag" ]; then
-    touch "$DATA_DIR/folio-sql-tag"
-  fi
-
-  PREV_FOLIO_TAG_VER=$(cat "$DATA_DIR/folio-sql-tag")
-
-  if ! [ "$PREV_FOLIO_TAG_VER" = "$EXTERNAL_SQL_FOLIO_TAG" ]; then
-    echo 'Setting external_sql_folio variable before full start.' >> "$LOG_FILE_PATH"
-    if [ "$VERBOSE_LOGGING" = "true" ]; then
-      sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
-    else
-      sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
-    fi
-
-    sleep 5
-
-    psql -X -h localhost -d metadb -p $METADB_PORT -c "ALTER SYSTEM SET external_sql_folio = '$EXTERNAL_SQL_FOLIO_TAG';"
-    echo "$EXTERNAL_SQL_FOLIO_TAG" > "$DATA_DIR/folio-sql-tag"
-
-    sleep 1
-
-    exec sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
-  fi
 
   if [ "$VERBOSE_LOGGING" = "true" ]; then
     exec sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB

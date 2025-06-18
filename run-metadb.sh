@@ -105,7 +105,7 @@ if [ "$INIT_FLAG" = "true" ]; then
   fi
 
   psql -X -h localhost -d metadb -p $METADB_PORT -c "CREATE DATA SOURCE sensor TYPE kafka OPTIONS (brokers '$KAFKA_BROKERS', module 'folio', trim_schema_prefix '$FOLIO_TENANT_NAME', topics '$KAFKA_TOPICS', consumer_group '$KAFKA_CONSUMER_GROUP', add_schema_prefix '$ADD_SCHEMA_PREFIX', schema_stop_filter '$SCHEMA_STOP_FILTER', security '$KAFKA_SECURITY');"
-  echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete ("source snapshot complete" will appear in the log file), MetaDB will run with METADB_RUN_MODE set to "endsync".' >> "$LOG_FILE_PATH"
+  echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete MetaDB will run with METADB_RUN_MODE set to "endsync".' >> "$LOG_FILE_PATH"
   
   INIT_SYNC_FLAG=0
   while [ $INIT_SYNC_FLAG -le 0 ]

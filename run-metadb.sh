@@ -94,8 +94,14 @@ if [ "$INIT_FLAG" = "true" ]; then
   if [ "$VERBOSE_LOGGING" = "false" ]; then
     sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
   fi
-  echo 'Registering Kafka Connector' >> "$LOG_FILE_PATH"
   sleep 5
+
+  if [ -f "$SQL_INIT_SCRIPT_PATH" ]; then
+    echo "Running SQL Init Script at $SQL_INIT_SCRIPT_PATH" >> "$LOG_FILE_PATH"
+    psql -X -h localhost -d metadb -p $METADB_PORT -f "$SQL_INIT_SCRIPT_PATH"
+  fi
+
+  echo 'Registering Kafka Connector' >> "$LOG_FILE_PATH"
 
   if [[ "$ADD_SCHEMA_PREFIX" == *"_" ]] && ! [[ "$FOLIO_TENANT_NAME" == *"_" ]]; then
     FOLIO_TENANT_NAME="${FOLIO_TENANT_NAME}_"

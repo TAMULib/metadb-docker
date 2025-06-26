@@ -63,6 +63,7 @@ ENV LDP_CONF_FILE_PATH="/ldpconf/ldpconf.json"
 ENV DERIVED_TABLES_GIT_REPO="https://github.com/folio-org/folio-analytics.git"
 ENV DERIVED_TABLES_GIT_TAG="refs/tags/v1.8.0"
 ENV FORCE_RUN="false"
+ENV SQL_INIT_SCRIPT_PATH="/scripts/mappings.sql"
 
 # Specify Non-root User
 RUN useradd metadb

@@ -34,6 +34,7 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 |FOLIO_TENANT_NAME            |          tamu           |                                                       |Name of the tenant in FOLIO this will monitor. |
 |LDP_CONF_FILE_PATH           |  /ldpconf/ldpconf.json  |                                                       |Suggested to mount a ConfigMap to this path.   |
 |FORCE_RUN                    |          false          |                     true, false                       |Force tasks to ALWAYS proceed.                 |
+|SQL_INIT_SCRIPT_PATH         |  /scripts/mappings.sql  |Valid file path OR empty. ConfigMap recommended.       |SQL file run during init process.              |
 
 DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb
 

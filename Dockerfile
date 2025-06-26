@@ -61,6 +61,7 @@ ENV ADD_SCHEMA_PREFIX="folio_"
 ENV FOLIO_TENANT_NAME="tamu"
 ENV LDP_CONF_FILE_PATH="/ldpconf/ldpconf.json"
 ENV FORCE_RUN="false"
+ENV SQL_INIT_SCRIPT_PATH="/scripts/mappings.sql"
 
 # Specify Non-root User
 RUN useradd metadb

@@ -89,10 +89,10 @@ sslmode = $BACKEND_PG_SSLMODE" > "$DATA_DIR/metadb.conf"
 if [ "$INIT_FLAG" = "true" ]; then
   echo 'Continuing initialization process' >> "$LOG_FILE_PATH"
   if [ "$VERBOSE_LOGGING" = "true" ]; then
-    sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
+    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
   fi
   if [ "$VERBOSE_LOGGING" = "false" ]; then
-    sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
+    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
   fi
   sleep 5
 
@@ -134,7 +134,7 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
     exit 1
   fi
   echo 'Starting MetaDB Upgrade Task (this may take awhile)' >> "$LOG_FILE_PATH"
-  exec sudo -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" --force 2>&1 | cat >> "$LOG_FILE_PATH"
+  exec sudo -E -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" --force 2>&1 | cat >> "$LOG_FILE_PATH"
   echo 'MetaDB Upgrade Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi
@@ -147,9 +147,9 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
   fi
   echo 'Starting MetaDB Sync Task (source: sensor)' >> "$LOG_FILE_PATH"
   if [ "$FORCE_RUN" = "true" ]; then
-    exec sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec sudo -E -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
   else
-    exec sudo -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec sudo -E -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
   fi
   echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "endsync".' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="endsync"
@@ -158,9 +158,9 @@ fi
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
   echo 'Starting MetaDB Endsync Task (source: sensor)' >> "$LOG_FILE_PATH"
   if [ "$FORCE_RUN" = "true" ]; then
-    exec sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec sudo -E -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
   else
-    exec sudo -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec sudo -E -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
   fi
   echo 'MetaDB Endsync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
@@ -168,7 +168,7 @@ fi
 
 if [ "$METADB_RUN_MODE" = "migrate" ]; then
   echo "Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}." >> "$LOG_FILE_PATH"
-  exec sudo -u metadb /usr/bin/metadb migrate -D "$DATA_DIR" --ldpconf "$LDP_CONF_FILE_PATH" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  exec sudo -E -u metadb /usr/bin/metadb migrate -D "$DATA_DIR" --ldpconf "$LDP_CONF_FILE_PATH" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
   echo 'MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
   METADB_RUN_MODE="start"
 fi
@@ -177,9 +177,9 @@ if [ "$METADB_RUN_MODE" = "start" ]; then
   echo 'Starting MetaDB Instance' >> "$LOG_FILE_PATH"
 
   if [ "$VERBOSE_LOGGING" = "true" ]; then
-    exec sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB
+    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB
   else
-    exec sudo -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB
+    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB
   fi
 fi
 

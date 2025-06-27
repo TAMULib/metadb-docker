@@ -12,9 +12,9 @@ RUN cp /root/go/bin/goyacc /usr/bin
 # Start Build
 RUN git clone https://github.com/metadb-project/metadb.git -b v1.3.9
 WORKDIR /root/metadb
-COPY ./modify-force-lines.sh .
-RUN chmod o+rx ./modify-force-lines.sh
-RUN ./modify-force-lines.sh
+COPY ./modify-code.sh .
+RUN chmod o+rx ./modify-code.sh
+RUN ./modify-code.sh
 RUN chmod o+rx ./build.sh
 RUN ./build.sh
 
@@ -62,6 +62,8 @@ ENV FOLIO_TENANT_NAME="tamu"
 ENV LDP_CONF_FILE_PATH="/ldpconf/ldpconf.json"
 ENV FORCE_RUN="false"
 ENV SQL_INIT_SCRIPT_PATH="/scripts/mappings.sql"
+ENV DERIVED_TABLES_GIT_REPO="https://github.com/folio-org/folio-analytics.git"
+ENV DERIVED_TABLES_GIT_REFS="refs/tags/v1.8.0"
 
 # Specify Non-root User
 RUN useradd metadb

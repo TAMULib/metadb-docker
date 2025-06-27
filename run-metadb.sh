@@ -89,10 +89,10 @@ sslmode = $BACKEND_PG_SSLMODE" > "$DATA_DIR/metadb.conf"
 if [ "$INIT_FLAG" = "true" ]; then
   echo 'Continuing initialization process' >> "$LOG_FILE_PATH"
   if [ "$VERBOSE_LOGGING" = "true" ]; then
-    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
+    sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
   fi
   if [ "$VERBOSE_LOGGING" = "false" ]; then
-    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
+    sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
   fi
   sleep 5
 

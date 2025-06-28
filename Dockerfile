@@ -38,8 +38,8 @@ RUN chmod ugo+rx /usr/bin/goyacc
 EXPOSE 8550
 
 # Environment Variables
-ENV DATA_PATH="/data/metadb"
-ENV LOG_FILE_PATH="/data/metadb/metadb.log"
+ENV DATA_PATH="/etc/metadb"
+ENV LOG_FILE_PATH=""
 ENV VERBOSE_LOGGING="false"
 ENV MEM_LIMIT_GB="4"
 ENV METADB_PORT="8550"
@@ -59,14 +59,16 @@ ENV SCHEMA_STOP_FILTER="admin"
 ENV KAFKA_SECURITY="plaintext | ssl"
 ENV ADD_SCHEMA_PREFIX="folio_"
 ENV FOLIO_TENANT_NAME="tamu"
-ENV LDP_CONF_FILE_PATH="/opt/ldpconf.json"
+ENV LDP_CONF_FILE_PATH="/etc/metadb/ldpconf.json"
 ENV FORCE_RUN="false"
-ENV SQL_INIT_SCRIPT_PATH="/opt/mappings.sql"
+ENV SQL_INIT_SCRIPT_PATH="/etc/metadb/mappings.sql"
 ENV DERIVED_TABLES_GIT_REPO="https://github.com/folio-org/folio-analytics.git"
 ENV DERIVED_TABLES_GIT_REFS="refs/tags/v1.8.0"
 
 # Specify Non-root User
-RUN useradd metadb
+RUN useradd metadb -u 1000
+RUN mkdir /etc/metadb
+RUN chown metadb /etc/metadb
 WORKDIR /opt
 
 ENTRYPOINT ["/opt/run-metadb.sh"]

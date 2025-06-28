@@ -1,98 +1,166 @@
 #!/bin/bash
 
-# Trap exit method in case of exit while running initial sync.
-clean_quit()
-{
-  if [ ! -f "$LOG_FILE_PATH" ]; then 
-    touch "$LOG_FILE_PATH" 
-  fi
-  echo "Received exit signal, stopping MetaDB Instance" >> $LOG_FILE_PATH
-  if [ -f "$DATA_DIR/metadb.pid" ]; then
-    sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
-  fi
-  exit
-}
-
-trap clean_quit SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
-
+LOGGING_ENABLED=0
 ORIGINAL_METADB_RUN_MODE=$METADB_RUN_MODE
 
-# Script Start
-echo "Testing if $DATA_DIR exists" >> /proc/1/fd/1
-
-# Check if DATA_DIR exists, if not then runs metadb init
-INIT_FLAG="false"
-if [ ! -d "$DATA_DIR" ]; then
-  echo "$DATA_DIR does NOT exist, starting initialization process" >> /proc/1/fd/1
-  mkdir -p "$DATA_DIR"
-  rm -r "$DATA_DIR"
-  /usr/bin/metadb init -D "$DATA_DIR" >> /proc/1/fd/1
-  chown -R metadb "$DATA_DIR"
-  INIT_FLAG="true"
-fi
-
-if [ -f "$LOG_FILE_PATH" ]; then
-  if [ -f "${LOG_FILE_PATH}.old" ]; then
-    cat "$LOG_FILE_PATH" >> "${LOG_FILE_PATH}.old"
-    rm -f "$LOG_FILE_PATH"
+# Determine if we're logging or not
+# TODO: Add Log Rotation functionality
+if [ ! -z "$LOG_FILE_PATH" ]; then
+  if [ ! -f "$LOG_FILE_PATH" ]; then
+    touch "$LOG_FILE_PATH"
+    echo "[$(date +%F' '%T)] INFO: Initializing MetaDB Docker Edition." | tee -a "$LOG_FILE_PATH"
+    if [ $? -ne 0 ]; then
+      echo "[$(date +%F' '%T)] FATAL: Cannot write to log file at path ${LOG_FILE_PATH}!"
+      exit 1
+    fi
   else
-    mv "$LOG_FILE_PATH" "${LOG_FILE_PATH}.old"
+    echo "" >> "$LOG_FILE_PATH"
+    echo "[$(date +%F' '%T)] INFO: Initializing MetaDB Docker Edition." | tee -a "$LOG_FILE_PATH"
+    if [ $? -ne 0 ]; then
+      echo "[$(date +%F' '%T)] FATAL: Cannot write to log file at path ${LOG_FILE_PATH}!"
+      exit 1
+    fi
   fi
+
+  LOGGING_ENABLED=1
 fi
 
-# Ensures the metadb user has access to write to log
-if [ ! -f "$LOG_FILE_PATH" ]; then
-  touch "$LOG_FILE_PATH"
-  chown metadb "$LOG_FILE_PATH"
-  echo "Created Log File at $LOG_FILE_PATH" >> /proc/1/fd/1
-fi
-
-# Copy all log entries from the log file to the STDOUT of PID 1, so it appears in docker logs
-tail -f "$LOG_FILE_PATH" >> /proc/1/fd/1 &
-
-# Make sure MetaDB doesn't accidentally run a task multiple times due to the container restarting unexpectedly.
-if [ -f "$DATA_DIR/.error-flag" ]; then
-  if [ "$METADB_RUN_MODE" = "start" ]; then
-    rm -f "$DATA_DIR/.error-flag"
+# Helper function for stdout and file logging
+function log()
+{
+  STR="[$(date +%F' '%T)] $1"
+  if [ $LOGGING_ENABLED -ne 0 ]; then
+    echo $STR | tee -a "$LOG_FILE_PATH"
   else
-    echo "MetaDB exited with an error with the METADB_RUN_MODE in a task-state (sync, endsync, upgrade). In order to prevent tasks from unintentionally running multiple times, this script will exit with an error code. To clear this error state, either delete the file at $DATA_DIR/.error-flag or start MetaDB with METADB_RUN_MODE set to 'start'." >> "$LOG_FILE_PATH"
-    sleep 5
+    echo $STR
+  fi
+}
+
+# Trap exit method in case of exit while running initial sync.
+function clean_quit()
+{
+  log "INFO: Received exit signal, stopping MetaDB Instance"
+  if [ -f "$DATA_DIR/metadb.pid" ]; then
+    /usr/bin/metadb stop -D "$DATA_DIR"
+  fi
+  exit 0
+}
+trap clean_quit SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
+
+#---------------
+################
+##Script Start##
+################
+#---------------
+log "INFO: Testing if $DATA_DIR/metadb.conf exists"
+
+# Check if conf file exists, if not then create one with ENV variables
+if [ ! -f "$DATA_DIR/metadb.conf" ]; then
+  log "INFO: $DATA_DIR/metadb.conf does NOT exist, using BACKEND_ Envrionment Variables."
+  mkdir -p "$DATA_DIR"
+  touch "$DATA_DIR/metadb.conf"
+  if [ $? -ne 0 ]; then
+    log "ERROR: Could not write to $DATA_DIR/metadb.conf. Setting DATA_DIR to /etc/metadb."
+    DATA_DIR="/etc/metadb"
+    mkdir -p "$DATA_DIR"
+    touch "$DATA_DIR/metadb.conf"
+    if [ $? -ne 0 ]; then
+      log "FATAL: Could not write to DATA_DIR nor /etc/metadb!"
+      exit 1
+    fi
+  fi
+  
+  # Sanity check ENV variables
+  if [ -z "$BACKEND_DB_HOST" ]; then
+    log "FATAL: BACKEND_DB_HOST must be set, OR a valid metadb.conf must be mounted (Secret mounted to Pod) to ${DATA_DIR}/metadb.conf."
+    exit 1
+  fi
+  if [ -z "$BACKEND_DB_PORT" ]; then
+    log "WARN: BACKEND_DB_PORT is not set, defaulting to 5432."
+    BACKEND_DB_PORT=5432
+  fi
+  if [ -z "$BACKEND_PG_DATABASE" ]; then
+    log "WARN: BACKEND_PG_DATABASE is not set, defaulting to 'metadb'."
+    BACKEND_PG_DATABASE="metadb"
+  fi
+  if [ -z "$BACKEND_PG_USER" ]; then
+    log "WARN: BACKEND_PG_USER is not set, defaulting to 'metadb'."
+    BACKEND_PG_USER="metadb"
+  fi
+  if [ -z "$BACKEND_PG_USER_PASSWORD" ]; then
+    log "FATAL: BACKEND_PG_USER_PASSWORD must be set, OR a valid metadb.conf must be mounted (Secret mounted to Pod) to ${DATA_DIR}/metadb.conf."
+    exit 1
+  fi
+  if [ -z "$BACKEND_PG_SSLMODE" ]; then
+    log "WARN: BACKEND_PG_SSLMODE is not set, defaulting to 'prefer'."
+    BACKEND_PG_SSLMODE="prefer"
+  fi
+  
+  # Write out metadb.conf file
+  if [ "$VERBOSE_LOGGING" = "true" ]; then
+    log "DEBUG: Generated metadb.conf:"
+    log "DEBUG: [main]"
+    log "DEBUG: host = ${BACKEND_DB_HOST}"
+    log "DEBUG: port = ${BACKEND_DB_PORT}"
+    log "DEBUG: database = ${BACKEND_PG_DATABASE}"
+    log "DEBUG: superuser = ${BACKEND_PG_SUPERUSER}"
+    log "DEBUG: superuser_password = <redacted>"
+    log "DEBUG: systemuser = ${BACKEND_PG_USER}"
+    log "DEBUG: systemuser_password = <redacted>"
+    log "DEBUG: sslmode = ${BACKEND_PG_SSLMODE}"
+  fi
+  
+  echo "[main]
+  host = $BACKEND_DB_HOST
+  port = $BACKEND_DB_PORT
+  database = $BACKEND_PG_DATABASE
+  superuser = $BACKEND_PG_SUPERUSER
+  superuser_password = $BACKEND_PG_SUPERUSER_PASSWORD
+  systemuser = $BACKEND_PG_USER
+  systemuser_password = $BACKEND_PG_USER_PASSWORD
+  sslmode = $BACKEND_PG_SSLMODE" > "$DATA_DIR/metadb.conf"
+  
+  if [ $? -ne 0 ]; then
+    log "FATAL: Failed to write autogenerated metadb.conf file to ${DATA_DIR}/metadb.conf!"
     exit 1
   fi
 fi
 
+# Make sure MetaDB doesn't accidentally run a task multiple times due to the container restarting unexpectedly.
+if [ -f "$DATA_DIR/.error-flag" ]; then
+  if [ "$METADB_RUN_MODE" = "start" ]; then
+    if [ "$VERBOSE_LOGGING" = "true" ]; then
+      log "DEBUG: ${DATA_DIR}/.error-flag detected but METADB_RUN_MODE is in 'start' state. Deleting .error-flag."
+    fi
+	
+    rm -f "$DATA_DIR/.error-flag"
+  else
+    log "FATAL: MetaDB exited with an error with the METADB_RUN_MODE in a task-state (sync, endsync, upgrade). In order to prevent tasks from unintentionally running multiple times, this script will exit with an error code. To clear this error state, either delete the file at $DATA_DIR/.error-flag or start MetaDB with METADB_RUN_MODE set to 'start'."
+    exit 1
+  fi
+fi
+
+# Clear old PID file (if exists)
 if [ -f "$DATA_DIR/metadb.pid" ]; then
+  if [ "$VERBOSE_LOGGING" = "true" ]; then
+    log "DEBUG: ${DATA_DIR}/metadb.pid detected upon start. Deleting metadb.pid."
+  fi
+
   rm -f "$DATA_DIR/metadb.pid"
 fi
 
-# Generate metadb.conf
-if [ -f "$DATA_DIR/metadb.conf" ]; then
-  rm -f "$DATA_DIR/metadb.conf"
-  echo 'Deleting metadb.conf file' >> "$LOG_FILE_PATH"
-fi
-
-echo 'Generating new metadb.conf file' >> "$LOG_FILE_PATH"
-touch "$DATA_DIR/metadb.conf"
-chown -R metadb "$DATA_DIR"
-chmod o-rwx "$DATA_DIR/metadb.conf"
-echo "[main]
-host = $BACKEND_DB_HOST
-port = $BACKEND_DB_PORT
-database = $BACKEND_PG_DATABASE
-superuser = $BACKEND_PG_SUPERUSER
-superuser_password = $BACKEND_PG_SUPERUSER_PASSWORD
-systemuser = $BACKEND_PG_USER
-systemuser_password = $BACKEND_PG_USER_PASSWORD
-sslmode = $BACKEND_PG_SSLMODE" > "$DATA_DIR/metadb.conf"
-
+#TODO: PICK UP FROM HERE
 # Create Data Source Object if Initializing new MetaDB Instance
-if [ "$INIT_FLAG" = "true" ]; then
-  echo 'Continuing initialization process' >> "$LOG_FILE_PATH"
+export PGPASSWORD=$BACKEND_PG_USER_PASSWORD
+INIT_FLAG=$(psql -X -h $BACKEND_DB_HOST -d $BACKEND_PG_DATABASE -p $BACKEND_DB_PORT -U $BACKEND_PG_USER -c "SELECT COUNT(*) FROM metadb.source;" | grep row)
+export PGPASSWORD=""
+
+if [ $INIT_FLAG -eq 0 ]; then
   if [ "$VERBOSE_LOGGING" = "true" ]; then
-    sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
+    /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
   fi
   if [ "$VERBOSE_LOGGING" = "false" ]; then
-    sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
+    /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
   fi
   sleep 5
 
@@ -191,3 +259,4 @@ if ! [ "$ORIGINAL_METADB_RUN_MODE" = "start" ]; then
   echo "MetaDB exited unexpectedly with the METADB_RUN_MODE not set to 'start'. Setting error flag at $DATA_DIR/.error-flag" >> "$LOG_FILE_PATH"
   touch "$DATA_DIR/.error-flag"
 fi
+

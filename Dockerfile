@@ -23,16 +23,14 @@ FROM debian:trixie-slim AS host
 
 RUN apt update -y
 RUN apt upgrade -y
-RUN apt install sudo postgresql-client ca-certificates -y
+RUN apt install postgresql-client ca-certificates -y
 RUN update-ca-certificates
 
 # Copy Scripts and Binaries
 COPY --from=build /root/metadb/bin/metadb /usr/bin/metadb
-COPY --from=build /root/go/bin/goyacc /usr/bin/goyacc
 COPY ./run-metadb.sh /opt/run-metadb.sh
 RUN chmod ugo+rx /opt/run-metadb.sh
 RUN chmod ugo+rx /usr/bin/metadb
-RUN chmod ugo+rx /usr/bin/goyacc
 
 # Default Port
 EXPOSE 8550
@@ -69,6 +67,7 @@ ENV DERIVED_TABLES_GIT_REFS="refs/tags/v1.8.0"
 RUN useradd metadb -u 1000
 RUN mkdir /etc/metadb
 RUN chown metadb /etc/metadb
+USER metadb
 WORKDIR /opt
 
 ENTRYPOINT ["/opt/run-metadb.sh"]

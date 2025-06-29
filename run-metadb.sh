@@ -133,20 +133,6 @@ else
 # TODO: Read in existing config and make sure all required options are present
 fi
 
-# Make sure MetaDB doesn't accidentally run a task multiple times due to the container restarting unexpectedly.
-if [ -f "$DATA_DIR/.error-flag" ]; then
-  if [ "$METADB_RUN_MODE" = "start" ]; then
-    if [ "$VERBOSE_LOGGING" = "true" ]; then
-      log "DEBUG: ${DATA_DIR}/.error-flag detected but METADB_RUN_MODE is in 'start' state. Deleting .error-flag."
-    fi
-	
-    rm -f "$DATA_DIR/.error-flag"
-  else
-    log "FATAL: MetaDB exited with an error with the METADB_RUN_MODE in a task-state (sync, endsync, upgrade). In order to prevent tasks from unintentionally running multiple times, this script will exit with an error code. To clear this error state, either delete the file at $DATA_DIR/.error-flag or start MetaDB with METADB_RUN_MODE set to 'start'."
-    exit 1
-  fi
-fi
-
 # Clear old PID file (if exists)
 if [ -f "$DATA_DIR/metadb.pid" ]; then
   if [ "$VERBOSE_LOGGING" = "true" ]; then
@@ -156,27 +142,26 @@ if [ -f "$DATA_DIR/metadb.pid" ]; then
   rm -f "$DATA_DIR/metadb.pid"
 fi
 
-#TODO: PICK UP FROM HERE
 # Create Data Source Object if Initializing new MetaDB Instance
+#TODO: Figure out how to detect existing MetaDB instance. Requires reading potential existing metadb.conf.
 export PGPASSWORD=$BACKEND_PG_USER_PASSWORD
 INIT_FLAG=$(psql -X -h $BACKEND_DB_HOST -d $BACKEND_PG_DATABASE -p $BACKEND_DB_PORT -U $BACKEND_PG_USER -c "SELECT COUNT(*) FROM metadb.source;" | grep row)
 export PGPASSWORD=""
 
 if [ $INIT_FLAG -eq 0 ]; then
-  if [ "$VERBOSE_LOGGING" = "true" ]; then
-    /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
-  fi
-  if [ "$VERBOSE_LOGGING" = "false" ]; then
-    /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB &
-  fi
+# TODO: Sanity check Kafka settings
+  log "INFO: Initializing MetaDB and attempting to initialize Kafka Connector."
+  /usr/bin/metadb start -D "$DATA_DIR" -l "$DATA_DIR/metadb-init.log" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
+  tail -f "$DATA_DIR/metadb.init" &
+  TAIL_PID=$!
   sleep 5
 
   if [ -f "$SQL_INIT_SCRIPT_PATH" ]; then
-    echo "Running SQL Init Script at $SQL_INIT_SCRIPT_PATH" >> "$LOG_FILE_PATH"
+    log "INFO: Running SQL Init Script at $SQL_INIT_SCRIPT_PATH"
     psql -X -h localhost -d metadb -p $METADB_PORT -f "$SQL_INIT_SCRIPT_PATH"
   fi
 
-  echo 'Registering Kafka Connector' >> "$LOG_FILE_PATH"
+  log "INFO: Registering Kafka Connector at ${KAFKA_BROKERS} with topic(s) ${KAFKA_TOPICS}, and consumer group(s) ${KAFKA_CONSUMER_GROUP}."
 
   if [[ "$ADD_SCHEMA_PREFIX" == *"_" ]] && ! [[ "$FOLIO_TENANT_NAME" == *"_" ]]; then
     FOLIO_TENANT_NAME="${FOLIO_TENANT_NAME}_"
@@ -186,84 +171,80 @@ if [ $INIT_FLAG -eq 0 ]; then
   fi
 
   psql -X -h localhost -d metadb -p $METADB_PORT -c "CREATE DATA SOURCE sensor TYPE kafka OPTIONS (brokers '$KAFKA_BROKERS', module 'folio', trimschemaprefix '$FOLIO_TENANT_NAME', topics '$KAFKA_TOPICS', consumergroup '$KAFKA_CONSUMER_GROUP', addschemaprefix '$ADD_SCHEMA_PREFIX', schemastopfilter '$SCHEMA_STOP_FILTER', security '$KAFKA_SECURITY');"
-  echo 'Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete MetaDB will run with METADB_RUN_MODE set to "endsync".' >> "$LOG_FILE_PATH"
+  log "INFO: Running initial synchronization with Kafka Connect sensor (this may take awhile). Once the sync is complete MetaDB will run with METADB_RUN_MODE set to 'endsync'."
   
   INIT_SYNC_FLAG=0
   while [ $INIT_SYNC_FLAG -le 0 ]
   do
-    INIT_SYNC_FLAG=$(cat "$LOG_FILE_PATH" | grep "snapshot complete" | wc -l)
+    INIT_SYNC_FLAG=$(cat "$DATA_DIR/metadb-init.log" | grep "snapshot complete" | wc -l)
     sleep 1
   done
 
-  echo 'Initial snapshot completed' >> "$LOG_FILE_PATH"
+  log "INFO: Initial snapshot completed."
 
-  sudo -u metadb /usr/bin/metadb stop -D "$DATA_DIR"
+  /usr/bin/metadb stop -D "$DATA_DIR"
+  kill $TAIL_PID
   METADB_RUN_MODE="endsync"
 fi
 
 # Run MetaDB
 if [ "$METADB_RUN_MODE" = "upgrade" ]; then
-  if [ "$INIT_FLAG" = "true" ]; then
-    echo 'ERROR: MetaDB is set to run in upgrade mode, but it is just now initializing? Change METADB_RUN_MODE to "start"' >> "$LOG_FILE_PATH"
-    touch "$DATA_DIR/.error-flag"
-    exit 1
-  fi
-  echo 'Starting MetaDB Upgrade Task (this may take awhile)' >> "$LOG_FILE_PATH"
+  log "INFO: Starting MetaDB Upgrade Task."
   if [ "$FORCE_RUN" = "true" ]; then
-    exec sudo -E -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" --force 2>&1 | cat >> "$LOG_FILE_PATH"
+    if [ $LOGGING_ENABLED -ne 0 ]; then
+#     TODO: See if I can pipe to log() function instead of these if statements.
+      exec /usr/bin/metadb upgrade -D "$DATA_DIR" --force 2>&1 | cat >> "$LOG_FILE_PATH"
+    else
+      exec /usr/bin/metadb upgrade -D "$DATA_DIR" --force
+    fi
   else
-    exec sudo -E -u metadb /usr/bin/metadb upgrade -D "$DATA_DIR" 2>&1 | cat >> "$LOG_FILE_PATH"
+    if [ $LOGGING_ENABLED -ne 0 ]; then
+      exec /usr/bin/metadb upgrade -D "$DATA_DIR" 2>&1 | cat >> "$LOG_FILE_PATH"
+    else
+      exec /usr/bin/metadb upgrade -D "$DATA_DIR"
+    fi
   fi
-  echo 'MetaDB Upgrade Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
+  log "INFO: MetaDB Upgrade Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
   METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "sync" ]; then
-  if [ "$INIT_FLAG" = "true" ]; then
-    echo 'ERROR: MetaDB is set to run in sync mode, but it is just now initializing? Change METADB_RUN_MODE to "start"' >> "$LOG_FILE_PATH"
-    touch "$DATA_DIR/.error-flag"
-    exit 1
-  fi
-  echo 'Starting MetaDB Sync Task (source: sensor)' >> "$LOG_FILE_PATH"
+  log "Starting MetaDB Sync Task (source: sensor)"
   if [ "$FORCE_RUN" = "true" ]; then
-    exec sudo -E -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec /usr/bin/metadb sync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
   else
-    exec sudo -E -u metadb /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec /usr/bin/metadb sync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
   fi
-  echo 'MetaDB Sync Complete! Running MetaDB with METADB_RUN_MODE variable set to "endsync".' >> "$LOG_FILE_PATH"
+  log "INFO: MetaDB Sync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'endsync'."
   METADB_RUN_MODE="endsync"
 fi
 
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
-  echo 'Starting MetaDB Endsync Task (source: sensor)' >> "$LOG_FILE_PATH"
+  log "INFO: Starting MetaDB Endsync Task (source: sensor)"
   if [ "$FORCE_RUN" = "true" ]; then
-    exec sudo -E -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor --force 2>&1 | cat >> "$LOG_FILE_PATH"
   else
-    exec sudo -E -u metadb /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+    exec /usr/bin/metadb endsync -D "$DATA_DIR" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
   fi
-  echo 'MetaDB Endsync Complete! Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
+  log "INFO: MetaDB Endsync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
   METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "migrate" ]; then
-  echo "Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}." >> "$LOG_FILE_PATH"
-  exec sudo -E -u metadb /usr/bin/metadb migrate -D "$DATA_DIR" --ldpconf "$LDP_CONF_FILE_PATH" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
-  echo 'MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to "start". Recommended to change the METADB_RUN_MODE variable value to "start" and restarting the container when convenient.' >> "$LOG_FILE_PATH"
+  log "INFO: Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}."
+  exec /usr/bin/metadb migrate -D "$DATA_DIR" --ldpconf "$LDP_CONF_FILE_PATH" --source sensor 2>&1 | cat >> "$LOG_FILE_PATH"
+  log "INFO: MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
   METADB_RUN_MODE="start"
 fi
 
 if [ "$METADB_RUN_MODE" = "start" ]; then
-  echo 'Starting MetaDB Instance' >> "$LOG_FILE_PATH"
+  EX_LINE="/usr/bin/metadb start -D $DATA_DIR --port $METADB_PORT --memlimit $MEM_LIMIT_GB"
   if [ "$VERBOSE_LOGGING" = "true" ]; then
-    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB
+    EX_LINE=$EX_LINE" --debug"
   fi
-  if [ "$VERBOSE_LOGGING" = "false" ]; then
-    exec sudo -E -u metadb /usr/bin/metadb start -D "$DATA_DIR" -l "$LOG_FILE_PATH" --port $METADB_PORT --memlimit $MEM_LIMIT_GB
+  if [ $LOGGING_ENABLED -ne 0 ]; then
+    EX_LINE=$EX_LINE" -l $LOG_FILE_PATH"
   fi
-fi
 
-if ! [ "$ORIGINAL_METADB_RUN_MODE" = "start" ]; then
-  echo "MetaDB exited unexpectedly with the METADB_RUN_MODE not set to 'start'. Setting error flag at $DATA_DIR/.error-flag" >> "$LOG_FILE_PATH"
-  touch "$DATA_DIR/.error-flag"
+  exec $EX_LINE
 fi
-

@@ -167,6 +167,23 @@ else
   fi
 fi
 
+# Check runtime variables
+if [ -z "$METADB_PORT" ]; then
+  log "WARN: METADB_PORT is not set, defaulting to '8550'."
+  METADB_PORT=8550
+fi
+if [ -z "$METADB_PORT" ]; then
+  log "WARN: MEM_LIMIT_GB is not set, defaulting to '4'."
+  MEM_LIMIT_GB=4
+fi
+if [ -z "$METADB_RUN_MODE" ]; then
+  log "WARN: METADB_RUN_MODE is not set, defaulting to 'start'."
+  METADB_RUN_MODE="start"
+elif [ ! "$METADB_RUN_MODE" = "start" && ! "$METADB_RUN_MODE" = "sync" && ! "$METADB_RUN_MODE" = "endsync" && ! "$METADB_RUN_MODE" = "upgrade" && ! "$METADB_RUN_MODE" = "migrate" ]; then
+  log "WARN: METADB_RUN_MODE is set to invalid option '$METADB_RUN_MODE'. Valid options are 'start', 'sync', 'endsync', 'upgrade', and 'migrate'. Defaulting to 'start'."
+  METADB_RUN_MODE="start"
+fi
+
 # Clear old PID file (if exists)
 if [ -f "$DATA_DIR/metadb.pid" ]; then
   if [ "$VERBOSE_LOGGING" = "true" ]; then
@@ -203,8 +220,47 @@ if [ $INIT_FLAG -eq 0 ]; then
     ADD_SCHEMA_PREFIX="${ADD_SCHEMA_PREFIX}_"
   fi
 
-  # TODO: Sanity check Kafka settings
-  psql -X -h localhost -d metadb -p $METADB_PORT -c "CREATE DATA SOURCE sensor TYPE kafka OPTIONS (brokers '$KAFKA_BROKERS', module 'folio', trimschemaprefix '$FOLIO_TENANT_NAME', topics '$KAFKA_TOPICS', consumergroup '$KAFKA_CONSUMER_GROUP', addschemaprefix '$ADD_SCHEMA_PREFIX', schemastopfilter '$SCHEMA_STOP_FILTER', security '$KAFKA_SECURITY');"
+  PSQL_LINE="CREATE DATA SOURCE sensor TYPE kafka OPTIONS (module 'folio'"
+  if [ -z "$KAFKA_BROKERS" ]; then
+    log "WARN: KAFKA_BROKERS is not set, defaulting to 'kafka:9092'."
+    KAFKA_BROKERS="kafka:9092"
+  fi
+  PSQL_LINE=$PSQL_LINE", brokers '$KAFKA_BROKERS'"
+  if [ -z "$KAFKA_TOPICS" ]; then
+    log "WARN: KAFKA_TOPICS is not set, defaulting to '^metadb_sensor_1.'."
+    KAFKA_TOPICS="^metadb_sensor_1."
+  fi
+  PSQL_LINE=$PSQL_LINE", topics '$KAFKA_TOPICS'"
+  if [ -z "$KAFKA_CONSUMER_GROUP" ]; then
+    log "WARN: KAFKA_CONSUMER_GROUP is not set, defaulting to 'metadb_sensor_1_1'."
+    KAFKA_CONSUMER_GROUP="metadb_sensor_1_1"
+  fi
+  PSQL_LINE=$PSQL_LINE", consumergroup '$KAFKA_CONSUMER_GROUP'"
+  if [ -z "$KAFKA_SECURITY" ]; then
+    log "WARN: KAFKA_SECURITY is not set, defaulting to 'plaintext'."
+    KAFKA_SECURITY="plaintext"
+  fi
+  if [ ! "$KAFKA_SECURITY" = "plaintext" && ! "$KAFKA_SECURITY" = "ssl" ]; then
+    log "WARN: KAFKA_SECURITY is set to invalid value '$KAFKA_SECURITY'. Valid options are 'plaintext' and 'ssl'. Defaulting to 'plaintext'."
+    KAFKA_SECURITY="plaintext"
+  fi
+  PSQL_LINE=$PSQL_LINE", security '$KAFKA_SECURITY'"
+  if [ ! -z "$FOLIO_TENANT_NAME" ]; then
+    PSQL_LINE=$PSQL_LINE", trimschemaprefix '$FOLIO_TENANT_NAME'"
+  fi
+  if [ ! -z "$ADD_SCHEMA_PREFIX" ]; then
+    PSQL_LINE=$PSQL_LINE", addschemaprefix '$ADD_SCHEMA_PREFIX'"
+  fi
+  if [ ! -z "$SCHEMA_STOP_FILTER" ]; then
+    PSQL_LINE=$PSQL_LINE", schemastopfilter '$SCHEMA_STOP_FILTER'"
+  fi
+  PSQL_LINE=$PSQL_LINE");"
+
+  if [ "$VERBOSE_LOGGING" = "true" ]; then
+    log "DEBUG: Running following command on MetaDB: \"$PSQL_LINE\""
+  fi
+
+  psql -X -h localhost -d metadb -p $METADB_PORT -c "$PSQL_LINE"
   log "INFO: Running initial synchronization with Kafka Connect sensor (this will take awhile). Once the sync is complete MetaDB will run with METADB_RUN_MODE set to 'endsync', and then 'start'."
   
   INIT_SYNC_FLAG=0

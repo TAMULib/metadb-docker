@@ -194,12 +194,19 @@ if [ -f "$DATA_DIR/metadb.pid" ]; then
 fi
 
 # Create Data Source Object if Initializing new MetaDB Instance
-#TODO: Figure out how to detect existing MetaDB instance. Requires reading potential existing metadb.conf.
-export PGPASSWORD=$BACKEND_PG_USER_PASSWORD
-INIT_FLAG=$(psql -X -h $BACKEND_DB_HOST -d $BACKEND_PG_DATABASE -p $BACKEND_DB_PORT -U $BACKEND_PG_USER -c "SELECT COUNT(*) FROM metadb.source;" | grep row)
-export PGPASSWORD=""
+PGPASSWORD="$BACKEND_PG_USER_PASSWORD"
+export PGPASSWORD
 
-if [ $INIT_FLAG -eq 0 ]; then
+if [[ -z $(psql -h "$BACKEND_DB_HOST" -p $BACKEND_DB_PORT -d "$BACKEND_PG_DATABASE" -U "$BACKEND_PG_USER" -c "\dt metadb.init") ]]; then
+  INIT_FLAG=1
+else
+  INIT_FLAG=0
+fi
+
+PGPASSWORD=""
+export PGPASSWORD
+
+if [ $INIT_FLAG -eq 1 ]; then
   log "INFO: Initializing MetaDB and attempting to initialize Kafka Connector."
   /usr/bin/metadb start -D "$DATA_DIR" -l "$DATA_DIR/metadb-init.log" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
   tail -f "$DATA_DIR/metadb-init.log" &
@@ -327,7 +334,11 @@ fi
 if [ "$METADB_RUN_MODE" = "migrate" ]; then
   EX_LINE="/usr/bin/metadb migrate -D $DATA_DIR --source sensor --ldpconf $LDP_CONF_FILE_PATH"
 
-  # TODO: Sanity check LDP_CONF_FILE_PATH. Maybe add option to run without ldpconf file using ENV vars instead.
+  if [ ! -f "$LDP_CONF_FILE_PATH" ]; then
+    log "FATAL: METADB_RUN_MODE set to 'migrate' yet the LDP Configuration JSON File specified by LDP_CONF_FILE_PATH (value: ${LDP_CONF_FILE_PATH}) does not exist!"
+    exit 1
+  fi
+
   log "INFO: Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}."
   if [ $LOGGING_ENABLED -ne 0 ]; then
     EX_LINE=$EX_LINE" 2>&1 | tee -a \"$LOG_FILE_PATH\""

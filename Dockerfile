@@ -23,25 +23,23 @@ FROM debian:trixie-slim AS host
 
 RUN apt update -y
 RUN apt upgrade -y
-RUN apt install sudo postgresql-client ca-certificates -y
+RUN apt install postgresql-client ca-certificates -y
 RUN update-ca-certificates
 
 # Copy Scripts and Binaries
 COPY --from=build /root/metadb/bin/metadb /usr/bin/metadb
-COPY --from=build /root/go/bin/goyacc /usr/bin/goyacc
 COPY ./run-metadb.sh /opt/run-metadb.sh
 RUN chmod ugo+rx /opt/run-metadb.sh
 RUN chmod ugo+rx /usr/bin/metadb
-RUN chmod ugo+rx /usr/bin/goyacc
 
 # Default Port
 EXPOSE 8550
 
 # Environment Variables
-ENV DATA_PATH="/data/metadb"
-ENV LOG_FILE_PATH="/data/metadb/metadb.log"
+ENV DATA_DIR="/etc/metadb"
+ENV LOG_FILE_PATH=""
 ENV VERBOSE_LOGGING="false"
-ENV MEM_LIMIT_GB="2"
+ENV MEM_LIMIT_GB="4"
 ENV METADB_PORT="8550"
 ENV BACKEND_DB_HOST="pg-metadb"
 ENV BACKEND_DB_PORT="5432"
@@ -59,14 +57,17 @@ ENV SCHEMA_STOP_FILTER="admin"
 ENV KAFKA_SECURITY="plaintext | ssl"
 ENV ADD_SCHEMA_PREFIX="folio_"
 ENV FOLIO_TENANT_NAME="tamu"
-ENV LDP_CONF_FILE_PATH="/ldpconf/ldpconf.json"
+ENV LDP_CONF_FILE_PATH="/etc/metadb/ldpconf.json"
 ENV FORCE_RUN="false"
-ENV SQL_INIT_SCRIPT_PATH="/scripts/mappings.sql"
+ENV SQL_INIT_SCRIPT_PATH="/etc/metadb/mappings.sql"
 ENV DERIVED_TABLES_GIT_REPO="https://github.com/folio-org/folio-analytics.git"
 ENV DERIVED_TABLES_GIT_REFS="refs/tags/v1.8.0"
 
 # Specify Non-root User
-RUN useradd metadb
+RUN useradd metadb -u 1000
+RUN mkdir /etc/metadb
+RUN chown metadb /etc/metadb
+USER metadb
 WORKDIR /opt
 
 ENTRYPOINT ["/opt/run-metadb.sh"]

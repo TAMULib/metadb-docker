@@ -36,7 +36,7 @@ RUN chmod ugo+rx /usr/bin/metadb
 EXPOSE 8550
 
 # Environment Variables
-ENV DATA_PATH="/etc/metadb"
+ENV DATA_DIR="/etc/metadb"
 ENV LOG_FILE_PATH=""
 ENV VERBOSE_LOGGING="false"
 ENV MEM_LIMIT_GB="4"

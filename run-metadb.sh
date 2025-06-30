@@ -290,11 +290,13 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
   if [ "$FORCE_RUN" = "true" ]; then
     EX_LINE=$EX_LINE" --force"
   fi
+
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
+    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+  else
+    exec $EX_LINE
   fi
 
-  exec $EX_LINE
   log "INFO: MetaDB Upgrade Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
   METADB_RUN_MODE="start"
 fi
@@ -306,11 +308,13 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
   if [ "$FORCE_RUN" = "true" ]; then
     EX_LINE=$EX_LINE" --force"
   fi
+
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
+    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+  else
+    exec $EX_LINE
   fi
 
-  exec $EX_LINE
   log "INFO: MetaDB Sync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'endsync'."
   METADB_RUN_MODE="endsync"
 fi
@@ -322,11 +326,13 @@ if [ "$METADB_RUN_MODE" = "endsync" ]; then
   if [ "$FORCE_RUN" = "true" ]; then
     EX_LINE=$EX_LINE" --force"
   fi
+
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
+    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+  fi
+    exec $EX_LINE
   fi
 
-  exec $EX_LINE
   log "INFO: MetaDB Endsync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
   METADB_RUN_MODE="start"
 fi
@@ -341,10 +347,11 @@ if [ "$METADB_RUN_MODE" = "migrate" ]; then
 
   log "INFO: Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}."
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
+    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+  else
+    exec $EX_LINE
   fi
 
-  exec $EX_LINE
   log "INFO: MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
   METADB_RUN_MODE="start"
 fi
@@ -352,12 +359,14 @@ fi
 if [ "$METADB_RUN_MODE" = "start" ]; then
   EX_LINE="/usr/bin/metadb start -D $DATA_DIR --port $METADB_PORT --memlimit $MEM_LIMIT_GB"
 
+  log "INFO: Starting MetaDB Server in normal mode."
   if [ "$VERBOSE_LOGGING" = "true" ]; then
     EX_LINE=$EX_LINE" --debug"
   fi
-  if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" -l $LOG_FILE_PATH"
-  fi
 
-  exec $EX_LINE
+  if [ $LOGGING_ENABLED -ne 0 ]; then
+    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+  else
+    exec $EX_LINE
+  fi
 fi

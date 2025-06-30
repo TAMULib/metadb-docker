@@ -179,7 +179,7 @@ fi
 if [ -z "$METADB_RUN_MODE" ]; then
   log "WARN: METADB_RUN_MODE is not set, defaulting to 'start'."
   METADB_RUN_MODE="start"
-elif [ ! "$METADB_RUN_MODE" = "start" && ! "$METADB_RUN_MODE" = "sync" && ! "$METADB_RUN_MODE" = "endsync" && ! "$METADB_RUN_MODE" = "upgrade" && ! "$METADB_RUN_MODE" = "migrate" ]; then
+elif [ ! "$METADB_RUN_MODE" = "start" ] && [ ! "$METADB_RUN_MODE" = "sync" ] && [ ! "$METADB_RUN_MODE" = "endsync" ] && [ ! "$METADB_RUN_MODE" = "upgrade" ] && [ ! "$METADB_RUN_MODE" = "migrate" ]; then
   log "WARN: METADB_RUN_MODE is set to invalid option '$METADB_RUN_MODE'. Valid options are 'start', 'sync', 'endsync', 'upgrade', and 'migrate'. Defaulting to 'start'."
   METADB_RUN_MODE="start"
 fi
@@ -284,14 +284,14 @@ fi
 
 # Run MetaDB
 if [ "$METADB_RUN_MODE" = "upgrade" ]; then
-  EX_LINE="/usr/bin/metadb upgrade -D \"$DATA_DIR\""
+  EX_LINE="/usr/bin/metadb upgrade -D $DATA_DIR"
 
   log "INFO: Starting MetaDB Upgrade Task."
   if [ "$FORCE_RUN" = "true" ]; then
     EX_LINE=$EX_LINE" --force"
   fi
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a \"$LOG_FILE_PATH\""
+    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
   fi
 
   exec $EX_LINE
@@ -300,14 +300,14 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
 fi
 
 if [ "$METADB_RUN_MODE" = "sync" ]; then
-  EX_LINE="/usr/bin/metadb sync -D \"$DATA_DIR\" --source sensor"
+  EX_LINE="/usr/bin/metadb sync -D $DATA_DIR --source sensor"
 
   log "Starting MetaDB Sync Task (source: sensor)"
   if [ "$FORCE_RUN" = "true" ]; then
     EX_LINE=$EX_LINE" --force"
   fi
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a \"$LOG_FILE_PATH\""
+    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
   fi
 
   exec $EX_LINE
@@ -316,14 +316,14 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
 fi
 
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
-  EX_LINE="/usr/bin/metadb endsync -D \"$DATA_DIR\" --source sensor"
+  EX_LINE="/usr/bin/metadb endsync -D $DATA_DIR --source sensor"
 
   log "INFO: Starting MetaDB Endsync Task (source: sensor)"
   if [ "$FORCE_RUN" = "true" ]; then
     EX_LINE=$EX_LINE" --force"
   fi
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a \"$LOG_FILE_PATH\""
+    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
   fi
 
   exec $EX_LINE
@@ -341,7 +341,7 @@ if [ "$METADB_RUN_MODE" = "migrate" ]; then
 
   log "INFO: Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}."
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" 2>&1 | tee -a \"$LOG_FILE_PATH\""
+    EX_LINE=$EX_LINE" 2>&1 | tee -a $LOG_FILE_PATH"
   fi
 
   exec $EX_LINE
@@ -350,13 +350,13 @@ if [ "$METADB_RUN_MODE" = "migrate" ]; then
 fi
 
 if [ "$METADB_RUN_MODE" = "start" ]; then
-  EX_LINE="/usr/bin/metadb start -D \"$DATA_DIR\" --port $METADB_PORT --memlimit $MEM_LIMIT_GB"
+  EX_LINE="/usr/bin/metadb start -D $DATA_DIR --port $METADB_PORT --memlimit $MEM_LIMIT_GB"
 
   if [ "$VERBOSE_LOGGING" = "true" ]; then
     EX_LINE=$EX_LINE" --debug"
   fi
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    EX_LINE=$EX_LINE" -l \"$LOG_FILE_PATH\""
+    EX_LINE=$EX_LINE" -l $LOG_FILE_PATH"
   fi
 
   exec $EX_LINE

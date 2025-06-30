@@ -130,7 +130,41 @@ else
   if [ "$VERBOSE_LOGGING" = "true" ]; then
     log "DEBUG: Configuration detected at ${DATA_DIR}/metadb.conf. Running sanity checks."
   fi
-# TODO: Read in existing config and make sure all required options are present
+
+  # Read in existing config and make sure all required options are present
+  source <(grep = "$DATA_DIR/metadb.conf" | sed 's/ *= */=/g')
+
+  BACKEND_DB_HOST=$host
+  BACKEND_DB_PORT=$port
+  BACKEND_PG_DATABASE=$database
+  BACKEND_PG_USER=$systemuser
+  BACKEND_PG_USER_PASSWORD=$systemuser_password
+  BACKEND_PG_SSLMODE=$sslmode
+
+  if [ -z "$BACKEND_DB_HOST" ]; then
+    log "FATAL: 'host' entry must be set in $DATA_DIR/metadb.conf!"
+    exit 1
+  fi
+  if [ -z "$BACKEND_DB_PORT" ]; then
+    log "FATAL: 'port' entry must be set in $DATA_DIR/metadb.conf!"
+    exit 1
+  fi
+  if [ -z "$BACKEND_PG_DATABASE" ]; then
+    log "FATAL: 'database' entry must be set in $DATA_DIR/metadb.conf!"
+    exit 1
+  fi
+  if [ -z "$BACKEND_PG_USER" ]; then
+    log "FATAL: 'systemuser' entry must be set in $DATA_DIR/metadb.conf!"
+    exit 1
+  fi
+  if [ -z "$BACKEND_PG_USER_PASSWORD" ]; then
+    log "FATAL: 'systemuser_password' entry must be set in $DATA_DIR/metadb.conf!"
+    exit 1
+  fi
+  if [ -z "$BACKEND_PG_SSLMODE" ]; then
+    log "FATAL: 'sslmode' entry must be set in $DATA_DIR/metadb.conf!"
+    exit 1
+  fi
 fi
 
 # Clear old PID file (if exists)
@@ -152,7 +186,7 @@ if [ $INIT_FLAG -eq 0 ]; then
 # TODO: Sanity check Kafka settings
   log "INFO: Initializing MetaDB and attempting to initialize Kafka Connector."
   /usr/bin/metadb start -D "$DATA_DIR" -l "$DATA_DIR/metadb-init.log" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
-  tail -f "$DATA_DIR/metadb.init" &
+  tail -f "$DATA_DIR/metadb-init.log" &
   TAIL_PID=$!
   sleep 5
 

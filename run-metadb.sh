@@ -329,7 +329,7 @@ if [ "$METADB_RUN_MODE" = "endsync" ]; then
 
   if [ $LOGGING_ENABLED -ne 0 ]; then
     exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
-  fi
+  else
     exec $EX_LINE
   fi
 

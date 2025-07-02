@@ -266,20 +266,26 @@ if [ $INIT_FLAG -eq 1 ]; then
   log "INFO: Registering Kafka Connector with the following command: \"$PSQL_LINE\""
 
   psql -X -h localhost -d metadb -p $METADB_PORT -c "$PSQL_LINE"
-  log "INFO: Running initial synchronization with Kafka Connect sensor (this will take awhile). Once the sync is complete MetaDB will run with METADB_RUN_MODE set to 'endsync', and then 'start'."
-  
-  INIT_SYNC_FLAG=0
-  while [ $INIT_SYNC_FLAG -le 0 ]
-  do
-    INIT_SYNC_FLAG=$(cat "$DATA_DIR/metadb-init.log" | grep "snapshot complete" | wc -l)
+  log "INFO: Running initial synchronization with Kafka Connect sensor (this will take awhile). Once the sync is complete (check number of rows in tables) then change METADB_RUN_MODE to 'endsync'."
+
+# Hopefully temporary
+  while [ 0 -ne 1 ]; do
     sleep 1
   done
 
-  log "INFO: Initial snapshot completed."
-
-  /usr/bin/metadb stop -D "$DATA_DIR"
-  kill $TAIL_PID
-  METADB_RUN_MODE="endsync"
+#TODO: Figure out how to PROPERLY detect when sync is complete.  
+#  INIT_SYNC_FLAG=0
+#  while [ $INIT_SYNC_FLAG -le 0 ]
+#  do
+#    INIT_SYNC_FLAG=$(cat "$DATA_DIR/metadb-init.log" | grep "snapshot complete" | wc -l)
+#    sleep 1
+#  done
+#
+#  log "INFO: Initial snapshot completed."
+#
+#  /usr/bin/metadb stop -D "$DATA_DIR"
+#  kill $TAIL_PID
+#  METADB_RUN_MODE="endsync"
 fi
 
 # Run MetaDB

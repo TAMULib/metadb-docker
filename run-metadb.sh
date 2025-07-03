@@ -43,6 +43,10 @@ function clean_quit()
   if [ -f "$DATA_DIR/metadb.pid" ]; then
     /usr/bin/metadb stop -D "$DATA_DIR"
   fi
+
+  if [ ! -z "$TAIL_PID" ]; then
+    kill $TAIL_PID
+  fi
   exit 0
 }
 trap clean_quit SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM

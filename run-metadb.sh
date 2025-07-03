@@ -209,9 +209,9 @@ export PGPASSWORD
 if [ $INIT_FLAG -eq 1 ]; then
   log "INFO: Initializing MetaDB and attempting to initialize Kafka Connector."
   /usr/bin/metadb start -D "$DATA_DIR" -l "$DATA_DIR/metadb-init.log" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
+  sleep 5
   tail -f "$DATA_DIR/metadb-init.log" &
   TAIL_PID=$!
-  sleep 5
 
   if [ -f "$SQL_INIT_SCRIPT_PATH" ]; then
     log "INFO: Running SQL Init Script at $SQL_INIT_SCRIPT_PATH"
@@ -247,7 +247,7 @@ if [ $INIT_FLAG -eq 1 ]; then
     log "WARN: KAFKA_SECURITY is not set, defaulting to 'plaintext'."
     KAFKA_SECURITY="plaintext"
   fi
-  if [ ! "$KAFKA_SECURITY" = "plaintext" && ! "$KAFKA_SECURITY" = "ssl" ]; then
+  if [ ! "$KAFKA_SECURITY" = "plaintext" ] && [ ! "$KAFKA_SECURITY" = "ssl" ]; then
     log "WARN: KAFKA_SECURITY is set to invalid value '$KAFKA_SECURITY'. Valid options are 'plaintext' and 'ssl'. Defaulting to 'plaintext'."
     KAFKA_SECURITY="plaintext"
   fi

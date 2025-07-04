@@ -19,7 +19,7 @@ RUN chmod o+rx ./build.sh
 RUN ./build.sh
 
 # Host Image Layer
-FROM debian:trixie-slim AS host
+FROM debian:bookworm-slim AS host
 
 RUN apt update -y
 RUN apt upgrade -y

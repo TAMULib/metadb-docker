@@ -4,9 +4,8 @@ FROM debian:trixie-slim AS build
 # Install Dependencies
 WORKDIR /root
 RUN apt update -y
-RUN apt install gcc golang ragel ca-certificates git curl -y
+RUN apt install gcc golang ragel ca-certificates git -y
 RUN update-ca-certificates
-RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /root/pgdg.asc
 RUN go install golang.org/x/tools/cmd/goyacc@master
 RUN cp /root/go/bin/goyacc /usr/bin
 
@@ -20,17 +19,12 @@ RUN chmod o+rx ./build.sh
 RUN ./build.sh
 
 # Host Image Layer
-FROM debian:stable-slim AS host
-
-# Add Postgresql Repo for postgresql-client-17
-RUN apt update -y
-RUN apt install ca-certificates -y
-COPY --from=build /root/pgdg.asc /etc/pgdg.asc
-RUN sh -c 'echo "deb [signed-by=/etc/pgdg.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+FROM debian:trixie-slim AS host
 
 RUN apt update -y
 RUN apt upgrade -y
-RUN apt install postgresql-client-17 -y
+RUN apt install postgresql-client ca-certificates -y
+RUN update-ca-certificates
 
 # Copy Scripts and Binaries
 COPY --from=build /root/metadb/bin/metadb /usr/bin/metadb

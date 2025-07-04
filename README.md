@@ -1,6 +1,20 @@
 # metadb-docker
 
-Contains the build files for https://hub.docker.com/repository/docker/tamulibraries/metadb/
+Contains the build files for https://hub.docker.com/layers/tamulibraries/metadb/v1.3.9-hotfix0-UNTESTED/images/sha256-c7cc2e2f3160af83a48956d4f7838d978d7711d854a788a90222a674083ce5c0
+
+**BRANCH IS CURRENTLY BEING TESTED! CVEs ADDRESSED IN THIS BRANCH INCLUDE:**
+- CVE-2025-21613
+- CVE-2024-45337
+- GHSA-9763-4f94-gfch
+- CVE-2025-21614
+- CVE-2025-22869
+- CVE-2025-22874
+- CVE-2023-45288
+- CVE-2025-22870
+- CVE-2025-22872
+- CVE-2025-4673
+- CVE-2025-0913
+- GHSA-2x5j-vhc8-9cwm
 
 **Current Version:** v1.3.9
 

@@ -23,8 +23,9 @@ RUN ./build.sh
 FROM debian:stable-slim AS host
 
 # Add Postgresql Repo for postgresql-client-17
-COPY --from=build /root/pgdg.asc /etc/apt/trusted.gpg.d/pgdg.asc
+COPY --from=build /root/pgdg.asc /etc/pgdg.asc
 RUN sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+RUN apt-key add /etc/pgdg.asc
 
 # Keep Image Up-to-date
 RUN apt update -y

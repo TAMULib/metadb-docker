@@ -23,17 +23,14 @@ RUN ./build.sh
 FROM debian:stable-slim AS host
 
 # Add Postgresql Repo for postgresql-client-17
-COPY --from=build /root/pgdg.asc /etc/apt/trusted.gpg.d/pgdg.gpg
-RUN sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-RUN apt-key add /etc/pgdg.asc
+RUN apt update -y
+RUN apt install ca-certificates -y
+COPY --from=build /root/pgdg.asc /etc/pgdg.asc
+RUN sh -c 'echo "deb [signed-by=/etc/pgdg.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
-# Keep Image Up-to-date
 RUN apt update -y
 RUN apt upgrade -y
-RUN apt install postgresql-client-17 ca-certificates -y
-
-# Update Public CA Trust Store
-RUN update-ca-certificates
+RUN apt install postgresql-client-17 -y
 
 # Copy Scripts and Binaries
 COPY --from=build /root/metadb/bin/metadb /usr/bin/metadb

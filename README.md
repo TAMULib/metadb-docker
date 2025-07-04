@@ -1,6 +1,8 @@
 # metadb-docker
 
-Contains the build files for https://hub.docker.com/repository/docker/tamulibraries/metadb/
+**This branch is currently untested and is not a stable version of MetaDB!**
+
+No public images right now. One can build their own image by cloning this branch onto a machine with Docker and run 'docker build -t <name of your tag here> .' in the 'metadb-docker' directory.
 
 **Current Version:** v1.4.0-rc1
 
@@ -11,7 +13,7 @@ For feedback/reporting issues on the Dockerfile or the associated Run Script, pl
 # ENVIRONMENT VARIABLES
 |        Variable Name        |      DEFAULT VALUE                             |                     VALID OPTIONS                           |                              COMMENTS                             |
 |-----------------------------|------------------------------------------------|-------------------------------------------------------------|-------------------------------------------------------------------|
-|DATA_PATH                    |      /data/metadb                              |                                                             |Point to where persistent storage is mounted.                      |
+|DATA_DIR                     |      /data/metadb                              |                                                             |Point to where persistent storage is mounted.                      |
 |LOG_FILE_PATH                | /data/metadb/metadb.log                        |                                                             |Recommended to keep in persistent storage.                         |
 |VERBOSE_LOGGING              |         false                                  |                     true, false                             |                                                                   |
 |MEM_LIMIT_GB                 |           2                                    |                                                             |Must be set.                                                       |

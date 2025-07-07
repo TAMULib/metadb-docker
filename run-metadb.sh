@@ -285,12 +285,19 @@ if [ $INIT_FLAG -eq 1 ]; then
     sleep 1
   done
 
-  log "INFO: Initial snapshot completed."
+  log "INFO: Initial snapshot completed. Stopping MetaDB Server."
 
   /usr/bin/metadb stop -D "$DATA_DIR"
   kill $TAIL_PID
   TAIL_PID=''
-  METADB_RUN_MODE="endsync"
+
+  if [ "$SLEEP_AFTER_TASK" = "true" ]; then
+    log "INFO: MetaDB Initial Sync Complete. Setting container to sleep to prevent task from unintentionally re-running because SLEEP_AFTER_TASK is set to 'true'. Change the METADB_RUN_MODE variable to 'start' to start MetaDB."
+    sleep 999999
+    exit 0
+  else
+    METADB_RUN_MODE="endsync"
+  fi
 fi
 
 # Run MetaDB
@@ -308,8 +315,14 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
     $EX_LINE
   fi
 
-  log "INFO: MetaDB Upgrade Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
-  METADB_RUN_MODE="start"
+  if [ "$SLEEP_AFTER_TASK" = "true" ]; then
+    log "INFO: MetaDB Upgrade Complete. Setting container to sleep to prevent task from unintentionally re-running because SLEEP_AFTER_TASK is set to 'true'. Change the METADB_RUN_MODE variable to 'start' to start MetaDB."
+    sleep 999999
+    exit 0
+  else
+    log "INFO: MetaDB Upgrade Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
+    METADB_RUN_MODE="start"
+  fi
 fi
 
 if [ "$METADB_RUN_MODE" = "sync" ]; then
@@ -326,8 +339,14 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
     $EX_LINE
   fi
 
-  log "INFO: MetaDB Sync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'endsync'."
-  METADB_RUN_MODE="endsync"
+  if [ "$SLEEP_AFTER_TASK" = "true" ]; then
+    log "INFO: MetaDB Sync Complete. Setting container to sleep to prevent task from unintentionally re-running because SLEEP_AFTER_TASK is set to 'true'. Change the METADB_RUN_MODE variable to 'start' to start MetaDB."
+    sleep 999999
+    exit 0
+  else
+    log "INFO: MetaDB Sync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'endsync'."
+    METADB_RUN_MODE="endsync"
+  fi
 fi
 
 if [ "$METADB_RUN_MODE" = "endsync" ]; then
@@ -344,8 +363,14 @@ if [ "$METADB_RUN_MODE" = "endsync" ]; then
     $EX_LINE
   fi
 
-  log "INFO: MetaDB Endsync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
-  METADB_RUN_MODE="start"
+  if [ "$SLEEP_AFTER_TASK" = "true" ]; then
+    log "INFO: MetaDB Endsync Complete. Setting container to sleep to prevent task from unintentionally re-running because SLEEP_AFTER_TASK is set to 'true'. Change the METADB_RUN_MODE variable to 'start' to start MetaDB."
+    sleep 9999999
+    exit 0
+  else
+    log "INFO: MetaDB Endsync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
+    METADB_RUN_MODE="start"
+  fi
 fi
 
 if [ "$METADB_RUN_MODE" = "migrate" ]; then
@@ -363,8 +388,14 @@ if [ "$METADB_RUN_MODE" = "migrate" ]; then
     $EX_LINE
   fi
 
-  log "INFO: MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
-  METADB_RUN_MODE="start"
+  if [ "$SLEEP_AFTER_TASK" = "true" ]; then
+    log "INFO: MetaDB migration from LDP complete. Setting container to sleep to prevent task from unintentionally re-running because SLEEP_AFTER_TASK is set to 'true'. Change the METADB_RUN_MODE variable to 'start' to start MetaDB."
+    sleep 9999999
+    exit 0
+  else
+    log "INFO: MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
+    METADB_RUN_MODE="start"
+  fi
 fi
 
 if [ "$METADB_RUN_MODE" = "start" ]; then

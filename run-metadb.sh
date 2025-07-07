@@ -214,8 +214,14 @@ if [ $INIT_FLAG -eq 1 ]; then
   log "INFO: Initializing MetaDB and attempting to initialize Kafka Connector."
   /usr/bin/metadb start -D "$DATA_DIR" -l "$DATA_DIR/metadb-init.log" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
   sleep 5
-  tail -f "$DATA_DIR/metadb-init.log" &
-  TAIL_PID=$!
+  
+  if [ $LOGGING_ENABLED -ne 0 ]; then
+    tail -f "$DATA_DIR/metadb-init.log" | tee -a "$LOG_FILE_PATH" &
+    TAIL_PID=$!
+  else
+    tail -f "$DATA_DIR/metadb-init.log" &
+    TAIL_PID=$!
+  fi
 
   if [ -f "$SQL_INIT_SCRIPT_PATH" ]; then
     log "INFO: Running SQL Init Script at $SQL_INIT_SCRIPT_PATH"
@@ -272,24 +278,19 @@ if [ $INIT_FLAG -eq 1 ]; then
   psql -X -h localhost -d metadb -p $METADB_PORT -c "$PSQL_LINE"
   log "INFO: Running initial synchronization with Kafka Connect sensor (this will take awhile). Once the sync is complete (check number of rows in tables) then change METADB_RUN_MODE to 'endsync'."
 
-# Hopefully temporary
-  while [ 0 -ne 1 ]; do
+  INIT_SYNC_FLAG=0
+  while [ $INIT_SYNC_FLAG -le 0 ]
+  do
+    INIT_SYNC_FLAG=$(cat "$DATA_DIR/metadb-init.log" | grep "snapshot complete" | wc -l)
     sleep 1
   done
 
-#TODO: Figure out how to PROPERLY detect when sync is complete.  
-#  INIT_SYNC_FLAG=0
-#  while [ $INIT_SYNC_FLAG -le 0 ]
-#  do
-#    INIT_SYNC_FLAG=$(cat "$DATA_DIR/metadb-init.log" | grep "snapshot complete" | wc -l)
-#    sleep 1
-#  done
-#
-#  log "INFO: Initial snapshot completed."
-#
-#  /usr/bin/metadb stop -D "$DATA_DIR"
-#  kill $TAIL_PID
-#  METADB_RUN_MODE="endsync"
+  log "INFO: Initial snapshot completed."
+
+  /usr/bin/metadb stop -D "$DATA_DIR"
+  kill $TAIL_PID
+  TAIL_PID=''
+  METADB_RUN_MODE="endsync"
 fi
 
 # Run MetaDB
@@ -302,9 +303,9 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
   fi
 
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+    $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
   else
-    exec $EX_LINE
+    $EX_LINE
   fi
 
   log "INFO: MetaDB Upgrade Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
@@ -320,9 +321,9 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
   fi
 
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+    $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
   else
-    exec $EX_LINE
+    $EX_LINE
   fi
 
   log "INFO: MetaDB Sync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'endsync'."
@@ -338,9 +339,9 @@ if [ "$METADB_RUN_MODE" = "endsync" ]; then
   fi
 
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+    $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
   else
-    exec $EX_LINE
+    $EX_LINE
   fi
 
   log "INFO: MetaDB Endsync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."
@@ -357,9 +358,9 @@ if [ "$METADB_RUN_MODE" = "migrate" ]; then
 
   log "INFO: Starting MetaDB migration from LDP using configuration file ${LDP_CONF_FILE_PATH}."
   if [ $LOGGING_ENABLED -ne 0 ]; then
-    exec $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
+    $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
   else
-    exec $EX_LINE
+    $EX_LINE
   fi
 
   log "INFO: MetaDB migration from LDP complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'. Recommended to change the METADB_RUN_MODE variable value to 'start' and restarting the container when convenient."

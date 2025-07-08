@@ -89,11 +89,6 @@ if [ ! -f "$DATA_DIR/metadb.conf" ]; then
     log "WARN: BACKEND_PG_DATABASE is not set, defaulting to 'metadb'."
     BACKEND_PG_DATABASE="metadb"
   fi
-  if [ -z "$BACKEND_PG_SUPERUSER" ] || [ -z "$BACKEND_PG_SUPERUSER_PASSWORD" ]; then
-    log "WARN: BACKEND_PG_SUPERUSER and/or BACKEND_PG_SUPERUSER_PASSWORD is not set, defaulting to '${BACKEND_PG_USER}' user and its password."
-    BACKEND_PG_SUPERUSER=$BACKEND_PG_USER
-    BACKEND_PG_SUPERUSER_PASSWORD=$BACKEND_PG_USER_PASSWORD
-  fi
   if [ -z "$BACKEND_PG_USER" ]; then
     log "WARN: BACKEND_PG_USER is not set, defaulting to 'metadb'."
     BACKEND_PG_USER="metadb"
@@ -101,6 +96,11 @@ if [ ! -f "$DATA_DIR/metadb.conf" ]; then
   if [ -z "$BACKEND_PG_USER_PASSWORD" ]; then
     log "FATAL: BACKEND_PG_USER_PASSWORD must be set, OR a valid metadb.conf must be mounted to ${DATA_DIR}/metadb.conf."
     exit 1
+  fi
+  if [ -z "$BACKEND_PG_SUPERUSER" ] || [ -z "$BACKEND_PG_SUPERUSER_PASSWORD" ]; then
+    log "WARN: BACKEND_PG_SUPERUSER and/or BACKEND_PG_SUPERUSER_PASSWORD is not set, defaulting to '${BACKEND_PG_USER}' user and its password."
+    BACKEND_PG_SUPERUSER=$BACKEND_PG_USER
+    BACKEND_PG_SUPERUSER_PASSWORD=$BACKEND_PG_USER_PASSWORD
   fi
   if [ -z "$BACKEND_PG_SSLMODE" ]; then
     log "WARN: BACKEND_PG_SSLMODE is not set, defaulting to 'prefer'."
@@ -146,6 +146,8 @@ else
   BACKEND_DB_HOST=$host
   BACKEND_DB_PORT=$port
   BACKEND_PG_DATABASE=$database
+  BACKEND_PG_SUPERUSER=$superuser
+  BACKEND_PG_SUPERUSER_PASSWORD=$superuser_password
   BACKEND_PG_USER=$systemuser
   BACKEND_PG_USER_PASSWORD=$systemuser_password
   BACKEND_PG_SSLMODE=$sslmode
@@ -160,6 +162,14 @@ else
   fi
   if [ -z "$BACKEND_PG_DATABASE" ]; then
     log "FATAL: 'database' entry must be set in $DATA_DIR/metadb.conf!"
+    exit 1
+  fi
+  if [ -z "$BACKEND_PG_SUPERUSER" ]; then
+    log "FATAL: 'superuser' entry must be set in $DATA_DIR/metadb.conf! Hint: Try setting it to the same as 'systemuser'."
+    exit 1
+  fi
+  if [ -z "$BACKEND_PG_SUPERUSER_PASSWORD" ]; then
+    log "FATAL: 'superuser_password' entry must be set in $DATA_DIR/metadb.conf! Hint: Try setting it to the same as 'systemuser_password'."
     exit 1
   fi
   if [ -z "$BACKEND_PG_USER" ]; then

@@ -14,5 +14,5 @@ sed -i -e 's/ref :\= util.GetFolioVersion()/ref :\= os.Getenv("DERIVED_TABLES_GI
 go env -w GOTOOLCHAIN=go1.24.4+auto
 go get github.com/go-git/go-git/v5@v5.13.0
 go get golang.org/x/crypto@v0.35.0
-go get github.com/cloudflare/circl@v1.3.7
+go get github.com/cloudflare/circl@v1.6.1
 go get golang.org/x/net@v0.38.0

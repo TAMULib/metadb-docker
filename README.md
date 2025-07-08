@@ -57,7 +57,7 @@ The CronJob method is exactly as it sounds, it is some kind of recurring schedul
 
 # Links
 
-DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb
+DockerHub: https://hub.docker.com/r/tamulibraries/metadb/tags
 
 MetaDB Github: https://github.com/metadb-project/metadb
 

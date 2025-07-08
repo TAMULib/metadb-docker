@@ -89,6 +89,11 @@ if [ ! -f "$DATA_DIR/metadb.conf" ]; then
     log "WARN: BACKEND_PG_DATABASE is not set, defaulting to 'metadb'."
     BACKEND_PG_DATABASE="metadb"
   fi
+  if [ -z "$BACKEND_PG_SUPERUSER" ] || [ -z "$BACKEND_PG_SUPERUSER_PASSWORD" ]; then
+    log "WARN: BACKEND_PG_SUPERUSER and/or BACKEND_PG_SUPERUSER_PASSWORD is not set, defaulting to '${BACKEND_PG_USER}' user and its password."
+    BACKEND_PG_SUPERUSER=$BACKEND_PG_USER
+    BACKEND_PG_SUPERUSER_PASSWORD=$BACKEND_PG_USER_PASSWORD
+  fi
   if [ -z "$BACKEND_PG_USER" ]; then
     log "WARN: BACKEND_PG_USER is not set, defaulting to 'metadb'."
     BACKEND_PG_USER="metadb"

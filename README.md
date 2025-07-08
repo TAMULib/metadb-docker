@@ -45,6 +45,7 @@ The variables
 |DERIVED_TABLES_GIT_REFS      |     refs/tags/v1.8.0                           |Any exisiting tag(tags)/branch(heads) in repo. Blank to disable.|Refs from DERIVED_TABLES_GIT_REPO to clone to run daily.           |
 |FORCE_RUN                    |          false                                 |                      true. false                               |Force sync and endsync tasks to ALWAYS proceed.                    |
 |SQL_INIT_SCRIPT_PATH         |     /etc/metadb/mappings.sql                   |Valid file path OR empty. Mounted ConfigMap recommended.        |SQL file run during init process. Include data mappings here.      |
+|SLEEP_AFTER_TASK             |              false                             |                       true, false                              |If true the container stops after a task like upgrade, sync, etc   |
 
 # Derived Tables
 

@@ -62,6 +62,7 @@ ENV FORCE_RUN="false"
 ENV SQL_INIT_SCRIPT_PATH="/etc/metadb/mappings.sql"
 ENV DERIVED_TABLES_GIT_REPO="https://github.com/folio-org/folio-analytics.git"
 ENV DERIVED_TABLES_GIT_REFS="refs/tags/v1.8.0"
+ENV SLEEP_AFTER_TASK="false"
 
 # Specify Non-root User
 RUN useradd metadb -u 1000

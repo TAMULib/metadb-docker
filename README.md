@@ -1,6 +1,6 @@
 # metadb-docker
 
-Contains the build files for https://hub.docker.com/layers/tamulibraries/metadb/v1.3.9-hotfix0-UNTESTED/images/sha256-c7cc2e2f3160af83a48956d4f7838d978d7711d854a788a90222a674083ce5c0
+Contains the build files for https://hub.docker.com/r/tamulibraries/metadb/tags
 
 **Current Version:** v1.3.9
 

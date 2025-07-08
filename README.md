@@ -27,7 +27,7 @@ The variables
 |BACKEND_DB_HOST              |       pg-metadb                                |                                                                |FQDN or k8s Service Name for Postgres backend.                     |
 |BACKEND_DB_PORT              |         5432                                   |                    1024 to 65535                               |                                                                   |
 |BACKEND_PG_DATABASE          |        metadb                                  |                                                                |Must exist ahead of time.                                          |
-|BACKEND_PG_SUPERUSER         |       postgres                                 |                                                                |Optional.                                                          |
+|BACKEND_PG_SUPERUSER         |        <null>                                  |                                                                |Optional.                                                          |
 |BACKEND_PG_SUPERUSER_PASSWORD|        <null>                                  |                                                                |Optional.                                                          |
 |BACKEND_PG_USER              |        metadb                                  |                                                                |Postgres User who must own BACKEND_PG_DATABASE.                    |
 |BACKEND_PG_USER_PASSWORD     |        <null>                                  |                                                                |                                                                   |
@@ -65,16 +65,10 @@ MetaDB Documentation: https://metadb.dev/doc/1.3/
 
 # Changelog
 
-**v1.3.9-rebase0**: 
-- Moved to new run-metadb.sh script.
-- Directly supports no persistent storage and no logging.
-- Improved environment variable validation.
+**v1.3.9-rebase3**:
+- Added support for lack of BACKEND_PG_SUPERUSER.
 
-**v1.3.9-rebase1**: 
-- Made non-start tasks run in spawned processes rather than 'exec' to PID 1 in order to allow script to keep running after a task.
-- Added SLEEP_AFTER_TASK environment variable. 
-
-**v1.3.9-rebase2**: 
+**v1.3.9-rebase2**:
 - Fixed the following CVEs:
 - CVE-2025-21613
 - CVE-2024-45337
@@ -88,3 +82,12 @@ MetaDB Documentation: https://metadb.dev/doc/1.3/
 - CVE-2025-4673
 - CVE-2025-0913
 - GHSA-2x5j-vhc8-9cwm
+
+**v1.3.9-rebase1**:
+- Made non-start tasks run in spawned processes rather than 'exec' to PID 1 in order to allow script to keep running after a task.
+- Added SLEEP_AFTER_TASK environment variable.
+
+**v1.3.9-rebase0**: 
+- Moved to new run-metadb.sh script.
+- Directly supports no persistent storage and no logging.
+- Improved environment variable validation.

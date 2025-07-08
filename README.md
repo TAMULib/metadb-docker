@@ -2,20 +2,6 @@
 
 Contains the build files for https://hub.docker.com/layers/tamulibraries/metadb/v1.3.9-hotfix0-UNTESTED/images/sha256-c7cc2e2f3160af83a48956d4f7838d978d7711d854a788a90222a674083ce5c0
 
-**BRANCH IS CURRENTLY BEING TESTED! CVEs ADDRESSED IN THIS BRANCH INCLUDE:**
-- CVE-2025-21613
-- CVE-2024-45337
-- GHSA-9763-4f94-gfch
-- CVE-2025-21614
-- CVE-2025-22869
-- CVE-2025-22874
-- CVE-2023-45288
-- CVE-2025-22870
-- CVE-2025-22872
-- CVE-2025-4673
-- CVE-2025-0913
-- GHSA-2x5j-vhc8-9cwm
-
 **Current Version:** v1.3.9
 
 The "master" branch of this repo will always contain the build files for the latest image, which is the latest **stable release** from MetaDB. There are currently no plans to support non-stable-release builds of MetaDB, or instances of MetaDB that aren't using [FOLIO](https://folio.org/) as the backend
@@ -76,3 +62,29 @@ DockerHub: https://hub.docker.com/repository/docker/tamulibraries/metadb
 MetaDB Github: https://github.com/metadb-project/metadb
 
 MetaDB Documentation: https://metadb.dev/doc/1.3/
+
+# Changelog
+
+**v1.3.9-rebase0**: 
+- Moved to new run-metadb.sh script.
+- Directly supports no persistent storage and no logging.
+- Improved environment variable validation.
+
+**v1.3.9-rebase1**: 
+- Made non-start tasks run in spawned processes rather than 'exec' to PID 1 in order to allow script to keep running after a task.
+- Added SLEEP_AFTER_TASK environment variable. 
+
+**v1.3.9-rebase2**: 
+- Fixed the following CVEs:
+- CVE-2025-21613
+- CVE-2024-45337
+- GHSA-9763-4f94-gfch
+- CVE-2025-21614
+- CVE-2025-22869
+- CVE-2025-22874
+- CVE-2023-45288
+- CVE-2025-22870
+- CVE-2025-22872
+- CVE-2025-4673
+- CVE-2025-0913
+- GHSA-2x5j-vhc8-9cwm

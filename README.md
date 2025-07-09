@@ -23,7 +23,7 @@ It is recommended to run a single MetaDB instance for each FOLIO tenant. Any oth
     - Recommended to have at least 8GB of memory allocated to each broker.
 -  [Debezium Kafka Connector](https://hub.docker.com/r/debezium/connect)
     - Proven to work on v2.7.3 and v3.0.0, will likely continue working as expected in future versions.
-    - See 
+    - See [the JSON configuration template from the MetaDB developer.](https://metadb.dev/doc/1.3/#_creating_a_connector). **IMPORTANT:** the `"snapshot.mode": "exported"` is obsolete. Replace it with `"snapshot.mode": "initial"`.
     - Recommended to allocate at least 16GB of memory to this.
     - BOOTSTRAP_SERVERS in the Kafka Connector container should be the same as KAFKA_BROKERS in the MetaDB container.
     - If you have issues with messages exceeding the maximum size, there are several steps you must take:

@@ -1,20 +1,63 @@
 # metadb-docker
 
-Contains the build files for https://hub.docker.com/r/tamulibraries/metadb/tags
-
 **Current Version:** v1.3.9
 
-The "master" branch of this repo will always contain the build files for the latest image, which is the latest **stable release** from MetaDB. There are currently no plans to support non-stable-release builds of MetaDB, or instances of MetaDB that aren't using [FOLIO](https://folio.org/) as the backend
+Contains the build files for https://hub.docker.com/r/tamulibraries/metadb/tags
 
-For feedback/reporting issues on the Dockerfile or the associated Run Script, please use our Github repo (https://github.com/TAMULib/metadb-docker/issues). Please note that we are not the developers of MetaDB, so any issues for the underlying software should be submitted to the developer's github repo (https://github.com/metadb-project/metadb/issues).
+The "master" branch of this repo will always contain the build files for the latest image, which is the latest **stable release** from MetaDB. Currently the image only supports MetaDB instances which are using [FOLIO](https://folio.org/) as the backend.
+
+For feedback/reporting issues on anything within this repo (Dockerfile, run-metadb.sh script, minor changes to MetaDB source code with modify-code.sh), please use [the 'Issues' feature of our Github repository](https://github.com/TAMULib/metadb-docker/issues). Please note that **we are not the developers of MetaDB**, so any issues for the underlying software should be submitted to [the developer's Github repository](https://github.com/metadb-project/metadb/issues).
+
+It is recommended to run a single MetaDB instance for each FOLIO tenant. Any other configuration is unsupported.
+
+# Requirements
+- Postgres 15 (or later) Database
+    - For Postgres configuration, make sure `wal_level = logical`, as well as the [recommended configuration options from the MetaDB developer](https://metadb.dev/doc/1.3/#_postgresql_configuration).
+    - A backend user (BACKEND_PG_USER) and a database (BACKEND_PG_DATABASE) must already exist. It ia highly recommended to make the backend user the owner of the backend database.
+    - CPU usage on top peaks out around 4.00 during nightly maintenance jobs.
+    - At least 8GB of shared memory is required. 12-16GB is recommended.
+    - Initial disk usage is approximately 2x the size of the source database, so it is recommended to give the analytics database around 5x the disk space of the source database.
+-  Kafka Stack (recommended with Zookeeper)
+    - Recommended persistent storage size for Kafka Brokers is 3x the size of the source database. This will be necessary during the initial sync.
+    - Make sure log retention is set very liberally. Most databases take at least 24 hours to sync with MetaDB, so it is recommended to set log retention to at least 48 hours and with a very high (or preferably non-existent) byte size limit. If you encounter issues with the initial sync not capturing all of your data, then this is most likely the issue.
+    - Recommended to have at least 8GB of memory allocated to each broker.
+-  [Debezium Kafka Connector](https://hub.docker.com/r/debezium/connect)
+    - Proven to work on v2.7.3 and v3.0.0, will likely continue working as expected in future versions.
+    - See 
+    - Recommended to allocate at least 16GB of memory to this.
+    - BOOTSTRAP_SERVERS in the Kafka Connector container should be the same as KAFKA_BROKERS in the MetaDB container.
+    - If you have issues with messages exceeding the maximum size, there are several steps you must take:
+      - In the Kafka Connector container, set the environment variable `CONNECT_PRODUCER_MAX_REQUEST_SIZE` to above the size of the offending record.
+      - In the Kafka Connector container, set the environment variable `CONNECT_MESSAGE_MAX_BYTES` to above the size of the offending record.
+      - In the JSON configuration of the Kafka connector, set `producer.override.max.request.size` to above the size of the offending record.
+      - In the underlying Kafka stack, set the `message.max.bytes` and/or `KAFKA_CFG_MESSAGE_MAX_BYTES` to above the size of the offending record.
+      - Large records often cause the Kafka Connector container to crash and re-start the initial snapshot process. If this happens, you likely need to allocate more memory to the container.
 
 # Setup
 
 There are two ways to setup this container-- with an existing and valid metadb.conf file mounted to the container, or with all of the BACKEND_ environment variables set. Note that the existence of a metadb.conf file at DATA_DIR will completely disable the use of the BACKEND_ environment variables.
 
-To mount an existing metadb.conf file, first create a Secret in Kubernetes with a single entry. The entry's key must be "metadb.conf", and the value must be the contents of the file. Then, reconfigure the workload to mount this Secret to wherever you have DATA_DIR set (default: /etc/metadb). Make sure UID 1000 has permission to read this mounted file. To mount other files in the DATA_DIR directory, simply append more entries to this Secret and set the key of the entry to what you want the file to be named.
+**For quick/environment variable setup**, simply populate the following environment variables to match your environment:
+- BACKEND_DB_HOST
+    - FQDN or k8s Service Name for the Postgres backend, without the port (see BACKEND_DB_PORT).
+- BACKEND_PG_USER
+    - Name of the Postgres user within the Postgres backend that MetaDB uses to connect to the database.
+    - Create this user quickly with this command: `CREATE USER metadb WITH PASSWORD '<PUT PASSWORD HERE>';`
+- BACKEND_PG_USER_PASSWORD
+    - The password for the BACKEND_PG_USER postgres user.
+- BACKEND_PG_DATABASE
+    - Name of the database within the Postgres backend. This must already exist and it is recommended to make the BACKEND_PG_USER the owner of this database.
+    - Create this database quickly with this command: `CREATE DATABASE metadb WITH OWNER metadb;`
+- KAFKA_BROKERS
+    - The URL for the Kafka Backend(s). If there are multiple URLs, set the variable as a comma-seperated list. For example 'kafka-broker1.example.org:9092,kafka-broker2.example.org:9092,kafka-broker3.example.org:9092'.
+- FOLIO_TENANT_NAME
+    - Name of your FOLIO tenant. This will have the effect of changing the name of the table in the source database (such as '<tenant>_mod_inventory_storage') to '<ADD_SCHEMA_PREFIX>_inventory' in the analytics database. To disable this feature, explicitly define this variable as blank (e.g. FOLIO_TENANT_NAME='')
 
-The variables 
+**To mount an existing metadb.conf file**, first create a Secret in Kubernetes with a single entry. The entry's key must be "metadb.conf", and the value must be the contents of the file [as demonstrated here](https://metadb.dev/doc/1.3/#_server_configuration). Then, reconfigure the workload to mount this Secret to wherever you have DATA_DIR set (default: /etc/metadb). Make sure UID 1000 has permission to read this mounted file. To mount other files in the DATA_DIR directory, simply append more entries to this Secret and set the key of the entry to what you want the file to be named. In this setup, it is still recommended to set the following environment variables:
+- KAFKA_BROKERS
+    - The URL for the Kafka Backend(s). If there are multiple URLs, set the variable as a comma-seperated list. For example 'kafka-broker1.example.org:9092,kafka-broker2.example.org:9092,kafka-broker3.example.org:9092'.
+- FOLIO_TENANT_NAME
+    - Name of your FOLIO tenant. This will have the effect of changing the name of the table in the source database (such as '<tenant>_mod_inventory_storage') to '<ADD_SCHEMA_PREFIX>_inventory' in the analytics database. To disable this feature, explicitly define this variable as blank (e.g. FOLIO_TENANT_NAME='')
 
 # Environment Variables
 |        Variable Name        |      DEFAULT VALUE                             |                     VALID OPTIONS                              |                              COMMENTS                             |
@@ -47,7 +90,7 @@ The variables
 |SQL_INIT_SCRIPT_PATH         |     /etc/metadb/mappings.sql                   |Valid file path OR empty. Mounted ConfigMap recommended.        |SQL file run during init process. Include data mappings here.      |
 |SLEEP_AFTER_TASK             |              false                             |                       true, false                              |If true the container stops after a task like upgrade, sync, etc   |
 
-# Derived Tables
+# Derived Tables/Maintenance Jobs
 
 There are two main ways to run Derived Tables jobs against your analytics (BACKEND_) database-- the build-in method and a CronJob. 
 

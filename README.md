@@ -16,7 +16,7 @@ It is recommended to run a single MetaDB instance for each FOLIO tenant. Any oth
     - A backend user (BACKEND_PG_USER) and a database (BACKEND_PG_DATABASE) must already exist. It ia highly recommended to make the backend user the owner of the backend database.
     - CPU usage on top peaks out around 4.00 during nightly maintenance jobs.
     - At least 8GB of shared memory is required. 12-16GB is recommended.
-    - Initial disk usage is approximately 2x the size of the source database, so it is recommended to give the analytics database around 5x the disk space of the source database.
+    - Initial disk usage is approximately 2x the size of the source database, so it is recommended to give the analytics database around 5x the disk size of the source database.
 -  Kafka Stack (recommended with Zookeeper)
     - Recommended persistent storage size for Kafka Brokers is 3x the size of the source database. This will be necessary during the initial sync.
     - Make sure log retention is set very liberally. Most databases take at least 24 hours to sync with MetaDB, so it is recommended to set log retention to at least 48 hours and with a very high (or preferably non-existent) byte size limit. If you encounter issues with the initial sync not capturing all of your data, then this is most likely the issue.

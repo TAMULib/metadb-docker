@@ -191,7 +191,7 @@ if [ -z "$METADB_PORT" ]; then
   log "WARN: METADB_PORT is not set, defaulting to '8550'."
   METADB_PORT=8550
 fi
-if [ -z "$METADB_PORT" ]; then
+if [ -z "$MEM_LIMIT_GB" ]; then
   log "WARN: MEM_LIMIT_GB is not set, defaulting to '4'."
   MEM_LIMIT_GB=4
 fi

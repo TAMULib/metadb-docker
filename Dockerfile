@@ -15,8 +15,8 @@ WORKDIR /root/metadb
 COPY ./modify-code.sh .
 RUN chmod o+rx ./modify-code.sh
 RUN ./modify-code.sh
-RUN chmod o+rx ./build
-RUN ./build
+RUN chmod o+rx ./build.sh
+RUN ./build.sh
 
 # Host Image Layer
 FROM debian:trixie-slim AS host

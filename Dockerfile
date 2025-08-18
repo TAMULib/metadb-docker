@@ -10,7 +10,7 @@ RUN go install golang.org/x/tools/cmd/goyacc@master
 RUN cp /root/go/bin/goyacc /usr/bin
 
 # Start Build
-RUN git clone https://github.com/metadb-project/metadb.git -b v1.4.0-rc1
+RUN git clone https://github.com/metadb-project/metadb.git -b current-1.4
 WORKDIR /root/metadb
 COPY ./modify-code.sh .
 RUN chmod o+rx ./modify-code.sh

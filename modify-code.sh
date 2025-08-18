@@ -11,7 +11,7 @@ sed -i -e 's/ref :\= util.GetFolioVersion()/ref :\= os.Getenv("DERIVED_TABLES_GI
 
 # HOTFIX: Changes library versions to address CVE-2025-21613, CVE-2024-45337, GHSA-9763-4f94-gfch, CVE-2025-21614, CVE-2025-22869, CVE-2023-45288, CVE-2025-22870, CVE-2025-22872
 
-go env -w GOTOOLCHAIN=go1.24.4+auto
+go env -w GOTOOLCHAIN=go1.24.6+auto
 go get github.com/go-git/go-git/v5@v5.13.0
 go get golang.org/x/crypto@v0.35.0
 go get github.com/cloudflare/circl@v1.6.1

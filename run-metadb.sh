@@ -229,6 +229,11 @@ if [ $INIT_FLAG -eq 1 ]; then
   log "INFO: Initializing MetaDB and attempting to initialize Kafka Connector."
   /usr/bin/metadb start -D "$DATA_DIR" -l "$DATA_DIR/metadb-init.log" --port $METADB_PORT --debug --memlimit $MEM_LIMIT_GB &
   sleep 5
+
+  if [ ! -d /proc/$(cat "$DATA_DIR/metadb.pid") ]; then
+    log "FATAL: metadb process failed to start!"
+    exit 1
+  fi
   
   if [ $LOGGING_ENABLED -ne 0 ]; then
     tail -f "$DATA_DIR/metadb-init.log" | tee -a "$LOG_FILE_PATH" &
@@ -330,6 +335,11 @@ if [ "$METADB_RUN_MODE" = "upgrade" ]; then
     $EX_LINE
   fi
 
+  if [ ! -d /proc/$(cat "$DATA_DIR/metadb.pid") ]; then
+    log "FATAL: metadb process failed to start!"
+    exit 1
+  fi
+
   if [ "$SLEEP_AFTER_TASK" = "true" ]; then
     log "INFO: MetaDB Upgrade Complete. Setting container to sleep to prevent task from unintentionally re-running because SLEEP_AFTER_TASK is set to 'true'. Change the METADB_RUN_MODE variable to 'start' to start MetaDB."
     sleep 999999
@@ -352,6 +362,11 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
     $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
   else
     $EX_LINE
+  fi
+
+  if [ ! -d /proc/$(cat "$DATA_DIR/metadb.pid") ]; then
+    log "FATAL: metadb process failed to start!"
+    exit 1
   fi
 
   if [ "$SLEEP_AFTER_TASK" = "true" ]; then
@@ -378,6 +393,11 @@ if [ "$METADB_RUN_MODE" = "endsync" ]; then
     $EX_LINE
   fi
 
+  if [ ! -d /proc/$(cat "$DATA_DIR/metadb.pid") ]; then
+    log "FATAL: metadb process failed to start!"
+    exit 1
+  fi
+
   if [ "$SLEEP_AFTER_TASK" = "true" ]; then
     log "INFO: MetaDB Endsync Complete. Setting container to sleep to prevent task from unintentionally re-running because SLEEP_AFTER_TASK is set to 'true'. Change the METADB_RUN_MODE variable to 'start' to start MetaDB."
     sleep 9999999
@@ -401,6 +421,11 @@ if [ "$METADB_RUN_MODE" = "migrate" ]; then
     $EX_LINE 2>&1 | tee -a "$LOG_FILE_PATH"
   else
     $EX_LINE
+  fi
+
+  if [ ! -d /proc/$(cat "$DATA_DIR/metadb.pid") ]; then
+    log "FATAL: metadb process failed to start!"
+    exit 1
   fi
 
   if [ "$SLEEP_AFTER_TASK" = "true" ]; then

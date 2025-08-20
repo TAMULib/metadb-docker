@@ -1,6 +1,6 @@
 # metadb-docker
 
-**Current Version:** v1.3.9
+**Current Version:** v1.4.0
 
 Contains the build files for https://hub.docker.com/r/tamulibraries/metadb/tags
 
@@ -27,11 +27,11 @@ It is recommended to run a single MetaDB instance for each FOLIO tenant. Any oth
     - Recommended to allocate at least 16GB of memory to this.
     - BOOTSTRAP_SERVERS in the Kafka Connector container should be the same as KAFKA_BROKERS in the MetaDB container.
     - If you have issues with messages exceeding the maximum size, there are several steps you must take:
-      - In the Kafka Connector container, set the environment variable `CONNECT_PRODUCER_MAX_REQUEST_SIZE` to above the size of the offending record.
-      - In the Kafka Connector container, set the environment variable `CONNECT_MESSAGE_MAX_BYTES` to above the size of the offending record.
-      - In the JSON configuration of the Kafka connector, set `producer.override.max.request.size` to above the size of the offending record.
-      - In the underlying Kafka stack, set the `message.max.bytes` and/or `KAFKA_CFG_MESSAGE_MAX_BYTES` to above the size of the offending record.
-      - Large records often cause the Kafka Connector container to crash and re-start the initial snapshot process. If this happens, you likely need to allocate more memory to the container.
+    - In the Kafka Connector container, set the environment variable `CONNECT_PRODUCER_MAX_REQUEST_SIZE` to above the size of the offending record.
+    - In the Kafka Connector container, set the environment variable `CONNECT_MESSAGE_MAX_BYTES` to above the size of the offending record.
+    - In the JSON configuration of the Kafka connector, set `producer.override.max.request.size` to above the size of the offending record.
+    - In the underlying Kafka stack, set the `message.max.bytes` and/or `KAFKA_CFG_MESSAGE_MAX_BYTES` to above the size of the offending record.
+    - Large records often cause the Kafka Connector container to crash and re-start the initial snapshot process. If this happens, you likely need to allocate more memory to the container.
 
 # Setup
 
@@ -99,38 +99,17 @@ The built-in method involves cloning the PUBLIC (private is unsupported) git rep
 The CronJob method is exactly as it sounds, it is some kind of recurring scheduled task which uses 'psql' and/or third-party postgres clients to read and write to the analytics database. This is not officially supported by this image, but it would certainly work.
 
 # Links
-
+  
 DockerHub: https://hub.docker.com/r/tamulibraries/metadb/tags
 
 MetaDB Github: https://github.com/metadb-project/metadb
 
-MetaDB Documentation: https://metadb.dev/doc/1.3/
+MetaDB Documentation: https://metadb.dev/doc/1.4/
 
 # Changelog
 
-**v1.3.9-rebase3**:
-- Added support for lack of BACKEND_PG_SUPERUSER.
-
-**v1.3.9-rebase2**:
-- Fixed the following CVEs:
-- CVE-2025-21613
-- CVE-2024-45337
-- GHSA-9763-4f94-gfch
-- CVE-2025-21614
-- CVE-2025-22869
-- CVE-2025-22874
-- CVE-2023-45288
-- CVE-2025-22870
-- CVE-2025-22872
-- CVE-2025-4673
-- CVE-2025-0913
-- GHSA-2x5j-vhc8-9cwm
-
-**v1.3.9-rebase1**:
-- Made non-start tasks run in spawned processes rather than 'exec' to PID 1 in order to allow script to keep running after a task.
-- Added SLEEP_AFTER_TASK environment variable.
-
-**v1.3.9-rebase0**: 
-- Moved to new run-metadb.sh script.
-- Directly supports no persistent storage and no logging.
-- Improved environment variable validation.
+**v1.4.0**:
+- Initial 1.4.0 release version
+  
+**v1.4.0.rc1-0**:
+- Initial 1.4.0-rc1 version

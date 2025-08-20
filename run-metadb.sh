@@ -272,7 +272,7 @@ if [ $INIT_FLAG -eq 1 ]; then
     log "WARN: KAFKA_CONSUMER_GROUP is not set, defaulting to 'metadb_sensor_1_1'."
     KAFKA_CONSUMER_GROUP="metadb_sensor_1_1"
   fi
-  PSQL_LINE=$PSQL_LINE", consumergroup '$KAFKA_CONSUMER_GROUP'"
+  PSQL_LINE=$PSQL_LINE", consumer_group '$KAFKA_CONSUMER_GROUP'"
   if [ -z "$KAFKA_SECURITY" ]; then
     log "WARN: KAFKA_SECURITY is not set, defaulting to 'plaintext'."
     KAFKA_SECURITY="plaintext"
@@ -283,13 +283,13 @@ if [ $INIT_FLAG -eq 1 ]; then
   fi
   PSQL_LINE=$PSQL_LINE", security '$KAFKA_SECURITY'"
   if [ ! -z "$FOLIO_TENANT_NAME" ]; then
-    PSQL_LINE=$PSQL_LINE", trimschemaprefix '$FOLIO_TENANT_NAME'"
+    PSQL_LINE=$PSQL_LINE", trim_schema_prefix '$FOLIO_TENANT_NAME'"
   fi
   if [ ! -z "$ADD_SCHEMA_PREFIX" ]; then
-    PSQL_LINE=$PSQL_LINE", addschemaprefix '$ADD_SCHEMA_PREFIX'"
+    PSQL_LINE=$PSQL_LINE", add_schema_prefix '$ADD_SCHEMA_PREFIX'"
   fi
   if [ ! -z "$SCHEMA_STOP_FILTER" ]; then
-    PSQL_LINE=$PSQL_LINE", schemastopfilter '$SCHEMA_STOP_FILTER'"
+    PSQL_LINE=$PSQL_LINE", schema_stop_filter '$SCHEMA_STOP_FILTER'"
   fi
   PSQL_LINE=$PSQL_LINE");"
 

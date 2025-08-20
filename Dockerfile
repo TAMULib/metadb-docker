@@ -10,13 +10,13 @@ RUN go install golang.org/x/tools/cmd/goyacc@master
 RUN cp /root/go/bin/goyacc /usr/bin
 
 # Start Build
-RUN git clone https://github.com/metadb-project/metadb.git -b v1.3.9
+RUN git clone https://github.com/metadb-project/metadb.git -b current-1.4
 WORKDIR /root/metadb
 COPY ./modify-code.sh .
 RUN chmod o+rx ./modify-code.sh
 RUN ./modify-code.sh
-RUN chmod o+rx ./build.sh
-RUN ./build.sh
+RUN chmod o+rx ./build
+RUN ./build
 
 # Host Image Layer
 FROM debian:trixie-slim AS host
@@ -72,3 +72,4 @@ USER metadb
 WORKDIR /opt
 
 ENTRYPOINT ["/opt/run-metadb.sh"]
+

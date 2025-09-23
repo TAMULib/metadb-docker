@@ -98,6 +98,10 @@ The built-in method involves cloning the PUBLIC (private is unsupported) git rep
 
 The CronJob method is exactly as it sounds, it is some kind of recurring scheduled task which uses 'psql' and/or third-party postgres clients to read and write to the analytics database. This is not officially supported by this image, but it would certainly work.
 
+# Build it Yourself
+
+If you want to build your own image, simply clone this github repo and run 'docker build -t <image name> <path/to/cloned/repo>'. To change the Git branch/tag of the [MetaDB Project](https://github.com/metadb-project/metadb/tags) you want the image to compile, open the 'Dockerfile' file and edit the end of the 'git clone' line to match the name of the branch or tag.
+
 # Links
   
 DockerHub: https://hub.docker.com/r/tamulibraries/metadb/tags

@@ -374,8 +374,8 @@ if [ "$METADB_RUN_MODE" = "sync" ]; then
     sleep 999999
     exit 0
   else
-    log "INFO: MetaDB Sync Complete. Running MetaDB with METADB_RUN_MODE variable set to 'endsync'."
-    METADB_RUN_MODE="endsync"
+    log "INFO: MetaDB pre-sync tasks complete. Running MetaDB with METADB_RUN_MODE variable set to 'start'."
+    METADB_RUN_MODE="start"
   fi
 fi
 

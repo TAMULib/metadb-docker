@@ -11,8 +11,8 @@ sed -i -e 's/ref, err \= cat.GetConfig(\"external_sql_folio\")/ref \= os.Getenv(
 # Removes manual prompt from endsync process
 sed -i -e 's/if !opt.Force \&\& !opt.ForceAll {/if true == false {/g' ./cmd/metadb/dsync/endsync.go
 
-# Update dependencies to address CVE-2025-58188, CVE-2025-22869, CVE-2025-22870, CVE-2025-22872, and GHSA-2x5j-vhc8-9cwm
-go env -w GOTOOLCHAIN=go1.24.8+auto
+# Update dependencies to address CVE-2025-58187, CVE-2025-58188, CVE-2025-22869, CVE-2025-22870, CVE-2025-22872, and GHSA-2x5j-vhc8-9cwm
+go env -w GOTOOLCHAIN=go1.24.9+auto
 go get golang.org/x/crypto@v0.35.0
 go get golang.org/x/net@v0.38.0
 go get github.com/cloudflare/circl@v1.6.1

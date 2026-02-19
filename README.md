@@ -1,6 +1,6 @@
 # metadb-docker
 
-**Current Version:** v1.3.9
+**Current Version:** v1.3.10
 
 Contains the build files for https://hub.docker.com/r/tamulibraries/metadb/tags
 

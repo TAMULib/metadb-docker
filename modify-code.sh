@@ -10,3 +10,12 @@ sed -i -e 's/ref, err \= cat.GetConfig(\"external_sql_folio\")/ref \= os.Getenv(
 
 # Removes manual prompt from endsync process
 sed -i -e 's/if !opt.Force \&\& !opt.ForceAll {/if true == false {/g' ./cmd/metadb/dsync/endsync.go
+
+# HOTFIXES
+go env -w GOTOOLCHAIN=go1.26.6+auto
+go get github.com/go-git/go-git/v5@v5.19.2
+go get github.com/go-git/go-billy/v5@v5.9.0
+go get github.com/jackc/pgx/v5@v5.9.0
+go get golang.org/x/crypto@v0.55.0
+go get github.com/cloudflare/circl@v1.6.1
+go get golang.org/x/net@v0.56.0

@@ -11,10 +11,12 @@ sed -i -e 's/ref :\= util.GetFolioVersion()/ref :\= os.Getenv("DERIVED_TABLES_GI
 # Remove manual prompt from endsync process
 sed -i -e 's/if !opt.Force {/if true == false {/g' ./cmd/metadb/dsync/endsync.go
 
-# HOTFIX: Changes library versions to address CVE-2025-58187, CVE-2025-58188, CVE-2025-21613, CVE-2024-45337, GHSA-9763-4f94-gfch, CVE-2025-21614, CVE-2025-22869, CVE-2023-45288, CVE-2025-22870, CVE-2025-22872, CVE-2025-47914, CVE-2025-58181
+# HOTFIX
 
-go env -w GOTOOLCHAIN=go1.24.13+auto
-go get github.com/go-git/go-git/v5@v5.16.5
-go get golang.org/x/crypto@v0.45.0
+go env -w GOTOOLCHAIN=go1.25.13+auto
+go get github.com/go-git/go-git/v5@v5.19.2
+go get github.com/go-git/go-billy/v5@v5.9.0
+go get github.com/jackc/pgx/v5@v5.9.0
+go get golang.org/x/crypto@v0.55.0
 go get github.com/cloudflare/circl@v1.6.1
-go get golang.org/x/net@v0.38.0
+go get golang.org/x/net@v0.56.0

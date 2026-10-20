@@ -7,6 +7,7 @@ sed -i -e 's/if syncMode != NoSync {/if syncMode != NoSync \&\& !opt.Force {/g' 
 # Allows derived table git repo to be customized via ENV variable.
 sed -i -e 's/url :\= \"https:\/\/github.com\/folio-org\/folio-analytics.git\"/url :\= os.Getenv("DERIVED_TABLES_GIT_REPO")/g' ./cmd/metadb/server/server.go
 sed -i -e 's/ref :\= util.GetFolioVersion()/ref :\= os.Getenv("DERIVED_TABLES_GIT_REFS")/g' ./cmd/metadb/server/server.go
+sed -i -e 's/return fmt.Errorf("fixup-catalog-1/log.Info("fixup-catalog-1/g' ./cmd/metadb/server/server.go
 
 # Remove manual prompt from endsync process
 sed -i -e 's/if !opt.Force {/if true == false {/g' ./cmd/metadb/dsync/endsync.go
